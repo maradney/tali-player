@@ -1,0 +1,102 @@
+name: iptv_player
+description: Personal IPTV player app.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Localization (English + Arabic) and RTL. flutter_localizations also
+  # supplies the Material/Cupertino widget translations and RTL mirroring.
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.20.2
+
+  # Video playback - libmpv-based, handles raw .ts / HLS / weird codecs
+  # far better than the stock video_player package.
+  media_kit: ^1.1.11
+  media_kit_video: ^2.0.1
+  media_kit_libs_video: ^1.0.5 # pulls in the native libmpv binaries per-platform
+
+  dio: ^5.7.0 # HTTP client for talking to the Xtream player_api.php endpoint
+  cached_network_image: ^3.4.1 # disk+memory cache for posters/logos so they don't reload on every navigation
+  flutter_cache_manager: ^3.4.1 # already pulled in by cached_network_image; used directly by Settings' "clear image cache"
+
+  shared_preferences: ^2.3.0 # persists favorites and account metadata across app restarts
+  flutter_secure_storage: ^10.3.1 # OS keychain/DPAPI-backed storage for account passwords
+  crypto: ^3.0.3 # salted SHA-256 for the parental-control PIN (never stored in plaintext)
+  xml: ^7.0.1 # parses XMLTV EPG feeds for M3U playlists
+
+  sqflite: ^2.3.3+1 # local search index - native on Android/iOS
+  sqflite_common_ffi: ^2.3.3 # same, via FFI, for Windows/Linux desktop
+  path: ^1.9.0
+  path_provider: ^2.1.4 # finds a writable directory for the database file
+
+  window_manager: ^0.5.2 # OS-level fullscreen toggle for the player screen
+  file_selector: ^1.0.3 # native save/open dialogs for settings export/import
+  tray_manager: ^0.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+  # Test-only: lets the shared test harness install a fake path_provider so
+  # CatalogDatabase can open a throwaway db under a temp dir in the VM.
+  path_provider_platform_interface: ^2.1.0
+  plugin_platform_interface: ^2.1.0
+
+flutter:
+  uses-material-design: true
+  generate: true # builds AppLocalizations from lib/l10n/*.arb (see l10n.yaml)
+
+  # The bundled fonts' OFL license texts - shipped alongside the fonts (OFL
+  # requires the license to accompany them) and registered with Flutter's
+  # LicenseRegistry (see lib/font_licenses.dart) so they show in the About >
+  # Licenses page.
+  assets:
+    - assets/fonts/licenses/
+    # The system-tray icon (Windows wants an .ico); same art as the app icon.
+    - assets/icons/app_icon.ico
+
+  # Bundled (not runtime-fetched) so the app stays offline-friendly and makes
+  # no third-party network calls. All OFL-1.1; see assets/fonts/FONT-LICENSES.md.
+  fonts:
+    - family: Lato
+      fonts:
+        - asset: assets/fonts/Lato-Regular.ttf
+        - asset: assets/fonts/Lato-Bold.ttf
+          weight: 700
+    - family: IBM Plex Sans Arabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
+          weight: 700
+    - family: Atkinson Hyperlegible
+      fonts:
+        - asset: assets/fonts/AtkinsonHyperlegible-Regular.ttf
+        - asset: assets/fonts/AtkinsonHyperlegible-Bold.ttf
+          weight: 700
+    - family: Space Mono
+      fonts:
+        - asset: assets/fonts/SpaceMono-Regular.ttf
+        - asset: assets/fonts/SpaceMono-Bold.ttf
+          weight: 700
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
+        - asset: assets/fonts/Tajawal-Bold.ttf
+          weight: 700
+    # Cairo and Noto Sans Arabic ship only as variable fonts upstream; listed
+    # as a single asset each (no explicit weights) so Flutter maps fontWeight
+    # to the file's wght axis.
+    - family: Cairo
+      fonts:
+        - asset: assets/fonts/Cairo-VariableFont.ttf
+    - family: Noto Sans Arabic
+      fonts:
+        - asset: assets/fonts/NotoSansArabic-VariableFont.ttf
