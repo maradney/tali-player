@@ -1,6 +1,17 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Every playlist, stream and poster comes over the network, so without
+         this the app does nothing at all. It must live here rather than only in
+         the debug/profile manifests Flutter ships by default: those are not
+         merged into a release build, so a release APK would fail every request
+         while debug builds kept working — a bug that survives all testing and
+         only appears in the artifact users actually get. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- android:label is the launcher name. It must be kept in step with
+         appName in lib/app_info.dart by hand: the manifest is read by the OS
+         long before any Dart runs, so it cannot be sourced from there. -->
     <application
-        android:label="iptv_player"
+        android:label="IPTV Player"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

@@ -4,8 +4,10 @@ import 'dart:io';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
+import 'package:path/path.dart' as p;
 
 import '../../app_info.dart';
+import '../../platform_capabilities.dart';
 import '../../data/api/xtream_api_service.dart';
 import '../../data/db/catalog_database.dart';
 import '../../data/models/account.dart';
@@ -26,6 +28,16 @@ import 'account_status_card.dart';
 import 'diagnostics_screen.dart';
 
 const _backupTypeGroup = XTypeGroup(label: 'JSON', extensions: ['json']);
+
+/// Name of the settings-backup file: the suggested name in the desktop save
+/// dialog, and the actual name where we pick it ourselves (Android, which has
+/// no save dialog). Tracks [appSlug] so renaming the app renames the file.
+String get backupFileName => '${appSlug}_settings.json';
+
+/// [backupFileName] inside [directory] — where the export lands on platforms
+/// that can only hand us a folder. Separate from the picking so the naming can
+/// be tested without a file dialog.
+String backupPathIn(String directory) => p.join(directory, backupFileName);
 
 /// Settings, grouped into a few basic categories. Anything account-specific
 /// (add/remove/switch playlist) already lives in AccountsScreen and is
@@ -98,14 +110,24 @@ class SettingsScreen extends StatelessWidget {
     );
     if (proceed != true) return;
 
-    final location = await getSaveLocation(
-      suggestedName: '${appSlug}_settings.json',
-      acceptedTypeGroups: const [_backupTypeGroup],
-    );
-    if (location == null) return; // user cancelled the save dialog
+    final String? destination;
+    if (supportsSaveFileDialog) {
+      final location = await getSaveLocation(
+        suggestedName: backupFileName,
+        acceptedTypeGroups: const [_backupTypeGroup],
+      );
+      destination = location?.path;
+    } else {
+      // Android has no save dialog (file_selector_android implements only
+      // openFile/openFiles/getDirectoryPath), so ask for a folder and name the
+      // file ourselves instead of letting getSaveLocation throw.
+      final directory = await getDirectoryPath();
+      destination = directory == null ? null : backupPathIn(directory);
+    }
+    if (destination == null) return; // user cancelled the picker
 
     try {
-      await File(location.path).writeAsString(await SettingsBackup.export());
+      await File(destination).writeAsString(await SettingsBackup.export());
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

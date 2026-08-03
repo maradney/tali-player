@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.iptv_player"
+    namespace = "com.maradney.iptv_player"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -15,10 +15,13 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.iptv_player"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // Permanent once published — Play identifies the app by this and it can
+        // never be changed afterwards. Deliberately not derived from appName in
+        // app_info.dart: renaming the app must not orphan existing installs.
+        applicationId = "com.maradney.iptv_player"
+        // Flutter's default (24) already clears the highest floor our plugins
+        // impose (flutter_secure_storage 10.x needs 23), so we track the SDK's
+        // tested default rather than pinning a number that would silently drift.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
