@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Keeps the app's data on the device.
+
+  android:allowBackup="false" in the manifest already stops Google Drive
+  backups, but for apps targeting Android 12+ it does NOT stop device-to-device
+  transfer - that is governed here, and would otherwise carry the same data to a
+  new phone.
+
+  Two reasons to exclude everything rather than curate a list:
+
+  1. Correctness. Playlist passwords are held by flutter_secure_storage as an
+     encrypted blob in shared preferences, while the key itself lives in the
+     Android Keystore and is deliberately non-exportable. Any copy of that blob
+     therefore arrives on the new device without its key, which surfaces as
+     java.security.InvalidKeyException: "Failed to unwrap key" - see the
+     plugin's README. The ciphertext is useless anywhere but the device that
+     wrote it.
+
+  2. Honesty. The app tells users it makes no third-party network calls. Silently
+     copying profiles, watch history, kids allowlists and PIN hashes off the
+     device - even end-to-end encrypted into the user's own account - would not
+     match that. Settings > Export is the deliberate, inspectable way to move a
+     setup between devices, and unlike a backup it can carry the passwords too.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>
