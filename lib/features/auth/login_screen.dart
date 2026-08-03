@@ -116,8 +116,9 @@ class _LoginScreenState extends State<LoginScreen> {
       // background while the person browses Live TV/Movies/Series. If enhanced
       // search is on, the per-item cast/director crawl continues after it.
       unawaited(CatalogSyncService.instance.syncIfNeeded(account, _api).then(
-        (_) => CatalogEnrichmentService.instance.enrichIfEnabled(account, _api),
-      ));
+            (_) => CatalogEnrichmentService.instance
+                .enrichIfEnabled(account, _api),
+          ));
       if (!mounted) return;
       if (widget.onAdded != null) {
         widget.onAdded!();
@@ -142,134 +143,145 @@ class _LoginScreenState extends State<LoginScreen> {
     final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: widget.onAdded != null ? AppBar() : null,
-      body: Center(
-        child: ConstrainedBox(
-          // Keeps the form a sane width on a wide Windows window instead
-          // of stretching text fields edge to edge.
-          constraints: const BoxConstraints(maxWidth: 400),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Icon(Icons.live_tv,
-                    size: 56, color: Theme.of(context).colorScheme.primary),
-                const SizedBox(height: 12),
-                Text(
-                  widget.onAdded != null ? l.addPlaylist : l.signIn,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                SegmentedButton<AccountSourceKind>(
-                  segments: [
-                    ButtonSegment(
-                      value: AccountSourceKind.xtream,
-                      label: Text(l.sourceXtream),
-                      icon: const Icon(Icons.dns_outlined),
+      body: SafeArea(
+        child: Center(
+          // Scrollable because the form is taller than the viewport whenever
+          // the viewport is short: in landscape on a phone it overflowed by
+          // ~150px, which cut off the password field and the sign-in button
+          // entirely - the screen was unusable sideways. The same applies on a
+          // small screen, or at a large accessibility font size, with the
+          // keyboard up. Center still centres it while it fits.
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              // Keeps the form a sane width on a wide Windows window instead
+              // of stretching text fields edge to edge.
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Icon(Icons.live_tv,
+                        size: 56, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.onAdded != null ? l.addPlaylist : l.signIn,
+                      style: Theme.of(context).textTheme.headlineSmall,
+                      textAlign: TextAlign.center,
                     ),
-                    ButtonSegment(
-                      value: AccountSourceKind.m3u,
-                      label: Text(l.sourceM3u),
-                      icon: const Icon(Icons.link),
+                    const SizedBox(height: 24),
+                    SegmentedButton<AccountSourceKind>(
+                      segments: [
+                        ButtonSegment(
+                          value: AccountSourceKind.xtream,
+                          label: Text(l.sourceXtream),
+                          icon: const Icon(Icons.dns_outlined),
+                        ),
+                        ButtonSegment(
+                          value: AccountSourceKind.m3u,
+                          label: Text(l.sourceM3u),
+                          icon: const Icon(Icons.link),
+                        ),
+                      ],
+                      selected: {_sourceKind},
+                      onSelectionChanged: _loading
+                          ? null
+                          : (s) => setState(() {
+                                _sourceKind = s.first;
+                                _error = null;
+                              }),
                     ),
-                  ],
-                  selected: {_sourceKind},
-                  onSelectionChanged: _loading
-                      ? null
-                      : (s) => setState(() {
-                            _sourceKind = s.first;
-                            _error = null;
-                          }),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _nameController,
-                  decoration: InputDecoration(
-                    labelText: l.nameOptional,
-                    hintText: l.nameHint,
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                if (_sourceKind == AccountSourceKind.xtream) ...[
-                  TextField(
-                    controller: _serverController,
-                    decoration: InputDecoration(
-                      labelText: l.serverUrl,
-                      hintText: 'http://example.com:8080',
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _usernameController,
-                    decoration: InputDecoration(
-                      labelText: l.username,
-                      border: const OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _passwordController,
-                    decoration: InputDecoration(
-                      labelText: l.password,
-                      border: const OutlineInputBorder(),
-                    ),
-                    obscureText: true,
-                    onSubmitted: (_) => _loading ? null : _connect(),
-                  ),
-                ] else ...[
-                  TextField(
-                    controller: _m3uUrlController,
-                    decoration: InputDecoration(
-                      labelText: l.playlistUrlOrFile,
-                      hintText: 'http://example.com/playlist.m3u8',
-                      border: const OutlineInputBorder(),
-                      // A playlist can also be a file on disk — browse fills
-                      // the field with its path (the fetcher reads either).
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.folder_open),
-                        tooltip: l.externalPlayerBrowse,
-                        onPressed: _loading ? null : _browsePlaylistFile,
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: l.nameOptional,
+                        hintText: l.nameHint,
+                        border: const OutlineInputBorder(),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _epgUrlController,
-                    decoration: InputDecoration(
-                      labelText: l.epgUrlOptional,
-                      hintText: 'http://example.com/epg.xml',
-                      border: const OutlineInputBorder(),
+                    const SizedBox(height: 12),
+                    if (_sourceKind == AccountSourceKind.xtream) ...[
+                      TextField(
+                        controller: _serverController,
+                        decoration: InputDecoration(
+                          labelText: l.serverUrl,
+                          hintText: 'http://example.com:8080',
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _usernameController,
+                        decoration: InputDecoration(
+                          labelText: l.username,
+                          border: const OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _passwordController,
+                        decoration: InputDecoration(
+                          labelText: l.password,
+                          border: const OutlineInputBorder(),
+                        ),
+                        obscureText: true,
+                        onSubmitted: (_) => _loading ? null : _connect(),
+                      ),
+                    ] else ...[
+                      TextField(
+                        controller: _m3uUrlController,
+                        decoration: InputDecoration(
+                          labelText: l.playlistUrlOrFile,
+                          hintText: 'http://example.com/playlist.m3u8',
+                          border: const OutlineInputBorder(),
+                          // A playlist can also be a file on disk — browse fills
+                          // the field with its path (the fetcher reads either).
+                          suffixIcon: IconButton(
+                            icon: const Icon(Icons.folder_open),
+                            tooltip: l.externalPlayerBrowse,
+                            onPressed: _loading ? null : _browsePlaylistFile,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _epgUrlController,
+                        decoration: InputDecoration(
+                          labelText: l.epgUrlOptional,
+                          hintText: 'http://example.com/epg.xml',
+                          border: const OutlineInputBorder(),
+                        ),
+                        onSubmitted: (_) => _loading ? null : _connect(),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    if (_error != null) ...[
+                      Text(
+                        _error!,
+                        style: const TextStyle(color: Colors.redAccent),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    FilledButton(
+                      onPressed: _loading ? null : _connect,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: _loading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(widget.onAdded != null ? l.add : l.signIn),
+                      ),
                     ),
-                    onSubmitted: (_) => _loading ? null : _connect(),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                if (_error != null) ...[
-                  Text(
-                    _error!,
-                    style: const TextStyle(color: Colors.redAccent),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                FilledButton(
-                  onPressed: _loading ? null : _connect,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: _loading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : Text(widget.onAdded != null ? l.add : l.signIn),
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
