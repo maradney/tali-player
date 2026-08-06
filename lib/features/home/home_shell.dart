@@ -73,6 +73,33 @@ List<int> visibleDestinationIndices(
           i,
     ];
 
+/// Most destinations a phone's bottom bar shows, the last of which is "More"
+/// when there are others to hold. Material specifies 3-5 for a NavigationBar;
+/// the app has ten, which on a ~410dp phone wrapped and clipped every label
+/// ("Movie s", "Favorit es", "Histor y", and Search cut off by the edge).
+const kMaxBottomBarDestinations = 5;
+
+/// Splits [visible] into the destinations the bottom bar shows directly and
+/// those that go behind "More".
+///
+/// Everything fits when there are few enough - which is the M3U case, where
+/// half the destinations are hidden anyway - and no "More" entry is added.
+/// Otherwise the bar keeps the first [max] - 1 in destination order, so the
+/// content types people came for (Home, Live TV, Movies, Series) stay one tap
+/// away and the long tail moves into the sheet.
+///
+/// Pure so the arithmetic is testable without a widget tree.
+({List<int> bar, List<int> overflow}) splitDestinationsForBar(
+  List<int> visible, {
+  int max = kMaxBottomBarDestinations,
+}) {
+  if (visible.length <= max) return (bar: visible, overflow: const []);
+  return (
+    bar: visible.take(max - 1).toList(),
+    overflow: visible.skip(max - 1).toList(),
+  );
+}
+
 /// The destination to actually select given what's visible: [selected] itself
 /// when it survived the filtering, otherwise the first visible destination
 /// (Home — index 0 is never hidden). Guards against a stale selection after
@@ -298,6 +325,60 @@ class _HomeShellState extends State<HomeShell> {
     });
   }
 
+  /// The phone bottom bar: the first few destinations, plus "More" holding the
+  /// rest. "More" shows as selected while one of its destinations is open, so
+  /// the bar never highlights nothing.
+  Widget _buildBottomBar(
+      AppLocalizations l, List<int> visible, int selectedIndex) {
+    final split = splitDestinationsForBar(visible);
+    final barPos = split.bar.indexOf(selectedIndex);
+    final isOverflowSelected = barPos < 0;
+    return NavigationBar(
+      selectedIndex: isOverflowSelected ? split.bar.length : barPos,
+      onDestinationSelected: (pos) {
+        if (pos < split.bar.length) {
+          _onTabSelected(split.bar[pos]);
+        } else {
+          _openMoreSheet(l, split.overflow, selectedIndex);
+        }
+      },
+      destinations: [
+        for (final i in split.bar)
+          NavigationDestination(
+            icon: Icon(_destinations[i].icon),
+            label: _destinations[i].label(l),
+          ),
+        if (split.overflow.isNotEmpty)
+          NavigationDestination(icon: const Icon(Icons.more_horiz), label: l.more),
+      ],
+    );
+  }
+
+  Future<void> _openMoreSheet(
+      AppLocalizations l, List<int> overflow, int selectedIndex) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final i in overflow)
+              ListTile(
+                leading: Icon(_destinations[i].icon),
+                title: Text(_destinations[i].label(l)),
+                selected: i == selectedIndex,
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  _onTabSelected(i);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
@@ -434,22 +515,15 @@ class _HomeShellState extends State<HomeShell> {
               ),
             ],
           ),
-          body: Stack(
+          // Narrow: the sync card takes its own strip above the nav bar rather
+          // than floating, which on a phone covered the bottom row of posters.
+          body: Column(
             children: [
-              body,
-              const SyncStatusToast(),
+              Expanded(child: body),
+              const SyncStatusBanner(),
             ],
           ),
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: selectedPos,
-            onDestinationSelected: (pos) => _onTabSelected(visible[pos]),
-            destinations: [
-              for (final i in visible)
-                NavigationDestination(
-                    icon: Icon(_destinations[i].icon),
-                    label: _destinations[i].label(l)),
-            ],
-          ),
+          bottomNavigationBar: _buildBottomBar(l, visible, selectedIndex),
         );
       },
     );

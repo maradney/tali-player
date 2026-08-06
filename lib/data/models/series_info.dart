@@ -1,3 +1,5 @@
+import 'age_rating.dart';
+
 class Episode {
   final String id; // used as the stream id in the playback URL
   final String title;
@@ -161,9 +163,9 @@ class SeriesInfo {
       coverUrl: _nonEmpty(info['cover']),
       rating: _nonEmpty(info['rating']),
       // Field name varies by panel - check the common variants in order.
-      ageRating: _nonEmpty(info['mpaa_rating']) ??
-          _nonEmpty(info['age']) ??
-          _nonEmpty(info['rating_mpaa']),
+      ageRating: meaningfulAgeRating(info['mpaa_rating']?.toString()) ??
+          meaningfulAgeRating(info['age']?.toString()) ??
+          meaningfulAgeRating(info['rating_mpaa']?.toString()),
       year: parseYear(info),
     );
   }

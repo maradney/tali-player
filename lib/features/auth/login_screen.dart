@@ -81,7 +81,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     return Account(
       profileId: _profileId,
-      name: name.isEmpty ? _serverController.text.trim() : name,
+      // Unnamed Xtream playlists fall back to the server's host, like M3U
+      // above, rather than the whole URL: the name is shown in the app bar on
+      // every screen, where "http://example.com:8080" was truncated to
+      // "http://exampl..." and told you nothing. Safe to change - Account.key
+      // is built from serverUrl/username, not the display name, so existing
+      // playlists keep their data.
+      name: name.isEmpty ? _hostOf(_serverController.text.trim()) : name,
       serverUrl: _serverController.text.trim(),
       username: _usernameController.text.trim(),
       password: _passwordController.text.trim(),

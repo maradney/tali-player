@@ -14,12 +14,17 @@ String syncStageLabel(AppLocalizations l, List<ContentType> stages) => stages
         })
     .join(', ');
 
-/// A small, closable progress card anchored to the bottom-right of the
-/// window (out of the way of the app-bar controls), showing background
-/// catalog indexing progress. Meant to be
-/// layered into a screen's build via a [Stack] - NOT part of the
-/// navigation stack - so pushing a new route (like the player) covers
-/// it automatically and it never shows up there.
+/// A small, closable progress card showing background catalog indexing.
+///
+/// Two shapes, because floating works on a desktop window and does not on a
+/// phone. [SyncStatusToast] anchors to the bottom-right via a [Stack], where
+/// there is plenty of room beside the content. [SyncStatusBanner] is the
+/// phone form: full width and taking real layout space, since a floating card
+/// on a ~410dp screen sat on top of the bottom row of posters and hid their
+/// titles.
+///
+/// Neither is part of the navigation stack, so pushing a route (like the
+/// player) covers it and it never appears there.
 class SyncStatusToast extends StatefulWidget {
   const SyncStatusToast({super.key});
 
@@ -28,6 +33,36 @@ class SyncStatusToast extends StatefulWidget {
 }
 
 class _SyncStatusToastState extends State<SyncStatusToast> {
+  @override
+  Widget build(BuildContext context) => _SyncStatusCard(
+        builder: (context, card) => Positioned(bottom: 12, right: 12, child: card),
+        width: 260,
+      );
+}
+
+/// The phone form: full-width, occupying layout space rather than hovering.
+class SyncStatusBanner extends StatelessWidget {
+  const SyncStatusBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) =>
+      _SyncStatusCard(builder: (context, card) => card);
+}
+
+class _SyncStatusCard extends StatefulWidget {
+  /// Wraps the finished card for its context (positioned, or as-is).
+  final Widget Function(BuildContext context, Widget card) builder;
+
+  /// Fixed width for the floating form; null makes it fill its parent.
+  final double? width;
+
+  const _SyncStatusCard({required this.builder, this.width});
+
+  @override
+  State<_SyncStatusCard> createState() => _SyncStatusCardState();
+}
+
+class _SyncStatusCardState extends State<_SyncStatusCard> {
   bool _dismissed = false;
   bool _wasSyncing = false;
 
@@ -50,15 +85,14 @@ class _SyncStatusToastState extends State<SyncStatusToast> {
         final stage = syncStageLabel(AppLocalizations.of(context)!,
             CatalogSyncService.instance.activeStages);
 
-        return Positioned(
-          bottom: 12,
-          right: 12,
-          child: Material(
+        return widget.builder(
+          context,
+          Material(
             elevation: 4,
             borderRadius: BorderRadius.circular(8),
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Container(
-              width: 260,
+              width: widget.width,
               padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
               child: Row(
                 children: [

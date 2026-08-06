@@ -17,7 +17,7 @@ import '../../l10n/app_localizations.dart';
 import '../common/api_error_helper.dart';
 import '../common/browse_sort.dart';
 import '../common/browse_states.dart';
-import '../common/category_rail.dart';
+import '../common/category_pane.dart';
 import '../common/downloads_button.dart';
 import '../common/grid_density_button.dart';
 import '../common/pin_dialogs.dart';
@@ -241,48 +241,33 @@ class _SeriesScreenState extends State<SeriesScreen> {
               ? ErrorState(message: _error!, onRetry: _loadCategories)
               : Column(
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: CategoryRail.width,
-                          child: QuickFilterField(
-                            controller: _categoryFilterController,
-                            hintText: l.filterCategories,
-                          ),
-                        ),
-                        const VerticalDivider(width: 1),
-                        Expanded(
-                          child: QuickFilterField(
-                            controller: _filterController,
-                            hintText: l.filterSeries,
-                          ),
-                        ),
-                      ],
+                    CategoryPaneFilters(
+                      categoryFilter: QuickFilterField(
+                        controller: _categoryFilterController,
+                        hintText: l.filterCategories,
+                      ),
+                      itemFilter: QuickFilterField(
+                        controller: _filterController,
+                        hintText: l.filterSeries,
+                      ),
                     ),
                     const Divider(height: 1),
                     Expanded(
-                      child: Row(
-                        children: [
-                          AnimatedBuilder(
-                            animation: PinLockService.instance,
-                            builder: (context, _) => CategoryRail(
-                              categories: _filteredCategories,
-                              selected: _selectedCategory,
-                              onSelect: _onCategoryTap,
-                              isLocked: (c) => PinLockService.instance
-                                  .isCategoryLocked('series', c.categoryId),
-                              onLongPress: (c) => toggleCategoryLockPrompt(
-                                context,
-                                type: 'series',
-                                categoryId: c.categoryId,
-                                name: c.categoryName,
-                              ),
-                            ),
+                      child: AnimatedBuilder(
+                        animation: PinLockService.instance,
+                        builder: (context, _) => CategoryPaneLayout(
+                          categories: _filteredCategories,
+                          selected: _selectedCategory,
+                          onSelect: _onCategoryTap,
+                          isLocked: (c) => PinLockService.instance
+                              .isCategoryLocked('series', c.categoryId),
+                          onLongPress: (c) => toggleCategoryLockPrompt(
+                            context,
+                            type: 'series',
+                            categoryId: c.categoryId,
+                            name: c.categoryName,
                           ),
-                          const VerticalDivider(width: 1),
-                          Expanded(
-                            child: _loadingSeries
+                          child: _loadingSeries
                                 ? const Center(child: CircularProgressIndicator())
                                 : _selectedCategory != null &&
                                         _series.isEmpty &&
@@ -350,8 +335,7 @@ class _SeriesScreenState extends State<SeriesScreen> {
                                                       'series', s.seriesId),
                                             ),
                                           ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ],

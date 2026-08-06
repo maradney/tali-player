@@ -16,7 +16,7 @@ import '../common/api_error_helper.dart';
 import '../common/browse_states.dart';
 import '../common/cached_poster_image.dart';
 import '../common/category_label.dart';
-import '../common/category_rail.dart';
+import '../common/category_pane.dart';
 import '../common/downloads_button.dart';
 import '../common/pin_dialogs.dart';
 import '../common/quick_filter_field.dart';
@@ -378,48 +378,33 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
               ? ErrorState(message: _error!, onRetry: _loadCategories)
               : Column(
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: CategoryRail.width,
-                          child: QuickFilterField(
-                            controller: _categoryFilterController,
-                            hintText: l.filterCategories,
-                          ),
-                        ),
-                        const VerticalDivider(width: 1),
-                        Expanded(
-                          child: QuickFilterField(
-                            controller: _filterController,
-                            hintText: l.filterChannels,
-                          ),
-                        ),
-                      ],
+                    CategoryPaneFilters(
+                      categoryFilter: QuickFilterField(
+                        controller: _categoryFilterController,
+                        hintText: l.filterCategories,
+                      ),
+                      itemFilter: QuickFilterField(
+                        controller: _filterController,
+                        hintText: l.filterChannels,
+                      ),
                     ),
                     const Divider(height: 1),
                     Expanded(
-                      child: Row(
-                        children: [
-                          AnimatedBuilder(
-                            animation: PinLockService.instance,
-                            builder: (context, _) => CategoryRail(
-                              categories: _filteredCategories,
-                              selected: _selectedCategory,
-                              onSelect: _onCategoryTap,
-                              isLocked: (c) => PinLockService.instance
-                                  .isCategoryLocked('live', c.categoryId),
-                              onLongPress: (c) => toggleCategoryLockPrompt(
-                                context,
-                                type: 'live',
-                                categoryId: c.categoryId,
-                                name: c.categoryName,
-                              ),
-                            ),
+                      child: AnimatedBuilder(
+                        animation: PinLockService.instance,
+                        builder: (context, _) => CategoryPaneLayout(
+                          categories: _filteredCategories,
+                          selected: _selectedCategory,
+                          onSelect: _onCategoryTap,
+                          isLocked: (c) => PinLockService.instance
+                              .isCategoryLocked('live', c.categoryId),
+                          onLongPress: (c) => toggleCategoryLockPrompt(
+                            context,
+                            type: 'live',
+                            categoryId: c.categoryId,
+                            name: c.categoryName,
                           ),
-                          const VerticalDivider(width: 1),
-                          Expanded(
-                            child: _loadingChannels
+                          child: _loadingChannels
                                 ? const Center(child: CircularProgressIndicator())
                                 : _selectedCategory != null &&
                                         _channels.isEmpty &&
@@ -494,8 +479,7 @@ class _LiveTvScreenState extends State<LiveTvScreen> {
                                           );
                                         },
                                       ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ],

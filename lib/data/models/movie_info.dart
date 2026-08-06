@@ -1,3 +1,5 @@
+import 'age_rating.dart';
+
 /// Overview detail for one movie - the result of get_vod_info. Only the
 /// "info" block is needed here (plot/cast/director/genre); playback still
 /// uses the Movie object already loaded from the category list.
@@ -57,9 +59,9 @@ class MovieInfo {
       genre: _nonEmpty(info['genre']),
       rating: _nonEmpty(info['rating']),
       // Field name varies by panel - check the common variants in order.
-      ageRating: _nonEmpty(info['mpaa_rating']) ??
-          _nonEmpty(info['age']) ??
-          _nonEmpty(info['rating_mpaa']),
+      ageRating: meaningfulAgeRating(info['mpaa_rating']?.toString()) ??
+          meaningfulAgeRating(info['age']?.toString()) ??
+          meaningfulAgeRating(info['rating_mpaa']?.toString()),
       year: parseYear(info),
     );
   }
