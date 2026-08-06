@@ -230,6 +230,7 @@
   "exportTitle": "Einstellungen exportieren?",
   "exportBody": "Dadurch werden deine Playlists und Darstellungseinstellungen in einer Datei deiner Wahl gespeichert.\n\nDie Datei enthält das Passwort jeder Playlist im Klartext, bewahre sie also an einem privaten Ort auf. Die Kindersicherungs-PIN und zwischengespeicherte Daten sind nicht enthalten.",
   "chooseFile": "Datei wählen…",
+  "chooseFolder": "Ordner wählen…",
   "couldNotWriteFile": "Datei konnte nicht geschrieben werden: {error}",
   "settingsExported": "Einstellungen exportiert",
   "couldNotReadFile": "Datei konnte nicht gelesen werden: {error}",

@@ -230,6 +230,7 @@
   "exportTitle": "Exportar definições?",
   "exportBody": "Isto guarda as suas listas e definições de aparência num ficheiro à sua escolha.\n\nO ficheiro inclui a palavra-passe de cada lista em texto legível, por isso guarde-o num local privado. O PIN de controlo parental e os dados em cache não são incluídos.",
   "chooseFile": "Escolher ficheiro…",
+  "chooseFolder": "Escolher pasta…",
   "couldNotWriteFile": "Não foi possível escrever o ficheiro: {error}",
   "settingsExported": "Definições exportadas",
   "couldNotReadFile": "Não foi possível ler o ficheiro: {error}",

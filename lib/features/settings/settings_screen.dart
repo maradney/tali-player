@@ -103,7 +103,12 @@ class SettingsScreen extends StatelessWidget {
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l.chooseFile),
+            // Names what actually opens next: a save dialog where there is
+            // one, and a folder picker on Android, where the file is named for
+            // the user. Saying "file" there sent people looking for a filename
+            // field that never appears.
+            child: Text(
+                supportsSaveFileDialog ? l.chooseFile : l.chooseFolder),
           ),
         ],
       ),

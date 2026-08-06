@@ -230,6 +230,7 @@
   "exportTitle": "Esportare le impostazioni?",
   "exportBody": "Questo salva le tue playlist e le impostazioni di aspetto in un file a tua scelta.\n\nIl file include la password di ciascuna playlist in chiaro, quindi conservalo in un luogo privato. Il PIN del controllo genitori e i dati in cache non sono inclusi.",
   "chooseFile": "Scegli file…",
+  "chooseFolder": "Scegli cartella…",
   "couldNotWriteFile": "Impossibile scrivere il file: {error}",
   "settingsExported": "Impostazioni esportate",
   "couldNotReadFile": "Impossibile leggere il file: {error}",

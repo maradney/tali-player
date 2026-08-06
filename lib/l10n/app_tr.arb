@@ -230,6 +230,7 @@
   "exportTitle": "Ayarlar dışa aktarılsın mı?",
   "exportBody": "Bu, oynatma listelerinizi ve görünüm ayarlarınızı seçtiğiniz bir dosyaya kaydeder.\n\nDosya, her oynatma listesinin şifresini okunabilir biçimde içerir; bu nedenle gizli bir yerde saklayın. Ebeveyn denetimi PIN'i ve önbelleğe alınmış veriler dahil edilmez.",
   "chooseFile": "Dosya seç…",
+  "chooseFolder": "Klasör seç…",
   "couldNotWriteFile": "Dosya yazılamadı: {error}",
   "settingsExported": "Ayarlar dışa aktarıldı",
   "couldNotReadFile": "Dosya okunamadı: {error}",

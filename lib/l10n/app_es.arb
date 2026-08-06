@@ -230,6 +230,7 @@
   "exportTitle": "¿Exportar ajustes?",
   "exportBody": "Esto guarda tus listas y ajustes de apariencia en un archivo que elijas.\n\nEl archivo incluye la contraseña de cada lista en texto legible, así que guárdalo en un lugar privado. El PIN de control parental y los datos en caché no se incluyen.",
   "chooseFile": "Elegir archivo…",
+  "chooseFolder": "Elegir carpeta…",
   "couldNotWriteFile": "No se pudo escribir el archivo: {error}",
   "settingsExported": "Ajustes exportados",
   "couldNotReadFile": "No se pudo leer el archivo: {error}",

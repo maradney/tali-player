@@ -338,6 +338,7 @@
   "exportTitle": "Export settings?",
   "exportBody": "This saves your playlists and appearance settings to a file you choose.\n\nThe file includes each playlist's password in readable form, so keep it somewhere private. The parental-control PIN and cached data are not included.",
   "chooseFile": "Choose file…",
+  "chooseFolder": "Choose folder…",
   "couldNotWriteFile": "Could not write the file: {error}",
   "@couldNotWriteFile": {
     "placeholders": { "error": { "type": "String" } }

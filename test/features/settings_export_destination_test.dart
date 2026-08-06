@@ -55,6 +55,16 @@ void main() {
       expect(supportsSaveFileDialog, isTrue);
     });
 
+    test('decides which button label the export dialog shows', () {
+      // The dialog's confirm button names what opens next. On Android it is a
+      // folder picker, and calling it "Choose file" sent people looking for a
+      // filename field that never appears.
+      debugSupportsSaveFileDialogOverride = false;
+      expect(supportsSaveFileDialog, isFalse); // => chooseFolder
+      debugSupportsSaveFileDialogOverride = true;
+      expect(supportsSaveFileDialog, isTrue); // => chooseFile
+    });
+
     test('is independent of isDesktopWindow', () {
       // Same platforms today, but they answer different questions — setting
       // one must not move the other.

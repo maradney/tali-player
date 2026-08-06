@@ -230,6 +230,7 @@
   "exportTitle": "Ekspor pengaturan?",
   "exportBody": "Ini menyimpan daftar putar dan pengaturan tampilan Anda ke file pilihan Anda.\n\nFile ini menyertakan kata sandi setiap daftar putar dalam bentuk yang dapat dibaca, jadi simpan di tempat pribadi. PIN kontrol orang tua dan data cache tidak disertakan.",
   "chooseFile": "Pilih file…",
+  "chooseFolder": "Pilih folder…",
   "couldNotWriteFile": "Tidak dapat menulis file: {error}",
   "settingsExported": "Pengaturan diekspor",
   "couldNotReadFile": "Tidak dapat membaca file: {error}",

@@ -230,6 +230,7 @@
   "exportTitle": "Exporter les réglages ?",
   "exportBody": "Cela enregistre vos playlists et vos réglages d'apparence dans un fichier de votre choix.\n\nLe fichier inclut le mot de passe de chaque playlist en clair, alors conservez-le dans un endroit privé. Le PIN de contrôle parental et les données en cache ne sont pas inclus.",
   "chooseFile": "Choisir un fichier…",
+  "chooseFolder": "Choisir un dossier…",
   "couldNotWriteFile": "Impossible d'écrire le fichier : {error}",
   "settingsExported": "Réglages exportés",
   "couldNotReadFile": "Impossible de lire le fichier : {error}",
