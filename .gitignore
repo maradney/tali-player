@@ -51,3 +51,11 @@ app.*.map.json
 
 # Generated localizations (flutter gen-l10n)
 /lib/l10n/app_localizations*.dart
+
+# Android release signing. android/.gitignore already covers key.properties and
+# keystores under android/; these catch a keystore left anywhere else in the
+# repo. The keystore IS the app's identity - lose it and no future version can
+# be published as an update, leak it and someone else can sign builds Android
+# accepts as yours. See tool/ANDROID_SIGNING.md.
+*.jks
+*.keystore
