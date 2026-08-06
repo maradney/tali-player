@@ -1410,8 +1410,17 @@ class _ControlsOverlay extends StatelessWidget {
                 ],
               ),
             ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          // Wrap, not Row: how many controls appear varies a lot (VOD adds the
+          // seek buttons, live adds channel skip, plus whichever track menus
+          // the stream offers and the fullscreen toggle), and on a phone that
+          // set overflowed the screen - the row reported "RIGHT OVERFLOWED BY
+          // 27 PIXELS" and pushed fullscreen off the edge. Wrapping onto a
+          // second line copes with any combination instead of just the one
+          // that was measured. A desktop window is wide enough that it stays a
+          // single row.
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               IconButton(
                 icon: const Icon(Icons.stop, color: iconColor),
