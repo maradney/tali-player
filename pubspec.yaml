@@ -39,6 +39,11 @@ dependencies:
   window_manager: ^0.5.2 # OS-level fullscreen toggle for the player screen
   file_selector: ^1.0.3 # native save/open dialogs for settings export/import
   tray_manager: ^0.5.3
+  # Keeps the display awake during playback - neither Flutter nor media_kit
+  # inhibits sleep, so without it the screen dies mid-film on a phone (and
+  # Windows was free to sleep during a long VOD too). Already present
+  # transitively via media_kit; declared here because we call it directly.
+  wakelock_plus: ^1.7.0
 
 dev_dependencies:
   flutter_test:

@@ -27,6 +27,7 @@ import '../../platform_capabilities.dart';
 import '../common/pin_dialogs.dart';
 import 'shortcuts_help.dart';
 import 'audio_only_visualizer.dart';
+import 'screen_awake.dart';
 import 'stream_failure.dart';
 import 'track_labels.dart';
 import 'video_fit.dart';
@@ -229,6 +230,7 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     return _audioTracks.any((t) => real(t.id)) &&
         !_videoTracks.any((t) => real(t.id));
   }
+
   double _playbackRate = 1.0;
 
   Duration _position = Duration.zero;
@@ -268,7 +270,8 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     // Hand off to the external player instead of building the internal one.
     // Still record watch history (that's URL-independent); everything below
     // is internal-player-only and stays uninitialised.
-    if (ExternalPlayer.isSupported && SettingsService.instance.useExternalPlayer) {
+    if (ExternalPlayer.isSupported &&
+        SettingsService.instance.useExternalPlayer) {
       _external = true;
       _scheduleRecordHistory();
       _launchExternal();
@@ -281,6 +284,12 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     _player.stream.playing.listen((playing) {
       if (!mounted) return;
       if (playing) _markStarted();
+      // Don't let the display sleep in the middle of a film; released again as
+      // soon as playback stops, so a paused or dead stream can't keep the
+      // screen lit. (_external is false here - that path returns above.)
+      ScreenAwake.set(
+        shouldKeepScreenAwake(playing: playing, external: _external),
+      );
       setState(() {
         _isPlaying = playing;
         if (!playing) _controlsVisible = true;
@@ -462,7 +471,8 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   /// (blocked / not found / unreachable) instead of mpv's raw "Failed to open".
   /// Reads only the first few KB — enough to sniff an anti-bot challenge page.
   Future<void> _classifyFailure() async {
-    if (_classified) return; // one probe per failure, whichever path fires first
+    // One probe per failure, whichever path fires first.
+    if (_classified) return;
     _classified = true;
 
     int? status;
@@ -488,8 +498,8 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     if (!mounted || _started) return;
 
     final l = AppLocalizations.of(context)!;
-    final friendly = switch (
-        classifyStreamFailure(statusCode: status, bodySnippet: body)) {
+    final friendly =
+        switch (classifyStreamFailure(statusCode: status, bodySnippet: body)) {
       StreamFailureKind.blocked => l.streamBlocked,
       StreamFailureKind.notFound => l.streamNotFound,
       StreamFailureKind.unreachable => l.streamUnreachable,
@@ -529,8 +539,8 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       _channelIndex = index;
       _title = channel.name;
       _streamUrl = _source!.liveUrl(channel);
-      _headers = iptvStreamHeaders(channel,
-          isM3u: widget.account?.isM3u ?? false);
+      _headers =
+          iptvStreamHeaders(channel, isM3u: widget.account?.isM3u ?? false);
       _epgFuture = _source.getShortEpg(channel.streamId);
       _favoriteItem = FavoriteItem(
         type: 'live',
@@ -587,7 +597,9 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       WatchHistoryService.instance.record(WatchHistoryEntry(
         type: ref.type,
         id: ref.id,
-        name: ref.type == 'episode' ? (widget.seriesName ?? widget.title) : widget.title,
+        name: ref.type == 'episode'
+            ? (widget.seriesName ?? widget.title)
+            : widget.title,
         imageUrl: widget.favoriteItem?.imageUrl,
         seriesId: ref.seriesId,
         seasonNumber: ref.seasonNumber,
@@ -748,13 +760,31 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   }
 
   Future<void> _toggleFullscreen() async {
-    // windowManager is desktop-only; the button is hidden elsewhere, this
-    // guards the keyboard/imperative paths. (Mobile immersive fullscreen is
-    // a separate SystemChrome feature for the Android phase.)
-    if (!isDesktopWindow) return;
     final next = !_isFullscreen;
-    await windowManager.setFullScreen(next);
+    if (isDesktopWindow) {
+      await windowManager.setFullScreen(next);
+    } else {
+      // The mobile equivalent: hide the status and navigation bars rather than
+      // resize an OS window. "Sticky" so a stray swipe reveals them briefly
+      // and then hides them again, instead of dropping out of fullscreen
+      // mid-scene.
+      await SystemChrome.setEnabledSystemUIMode(
+        next ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
+      );
+    }
     if (mounted) setState(() => _isFullscreen = next);
+  }
+
+  /// Undoes whatever [_toggleFullscreen] did, without needing the screen to
+  /// still be mounted. Called from dispose, where the desktop branch must stay
+  /// behind isDesktopWindow: _isFullscreen can now be set on Android too, and
+  /// an unguarded windowManager call there throws MissingPluginException.
+  void _restoreFromFullscreen() {
+    if (isDesktopWindow) {
+      windowManager.setFullScreen(false);
+    } else {
+      SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    }
   }
 
   // Picture-in-Picture, desktop style: the whole OS window shrinks into a
@@ -874,10 +904,16 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     if (!_external) {
       final ref = widget.playbackRef;
       if (ref != null) _saveProgress(ref);
+      // Leaving the player always releases the screen, even mid-playback -
+      // otherwise backing out during a stream would keep the display on for
+      // the rest of the session.
+      ScreenAwake.set(false);
       // Don't leave the whole app stuck fullscreen after leaving the player.
-      if (_isFullscreen) windowManager.setFullScreen(false);
-      // Nor stuck as a tiny always-on-top PiP window.
-      if (_isPip) {
+      if (_isFullscreen) _restoreFromFullscreen();
+      // Nor stuck as a tiny always-on-top PiP window. Desktop-only by
+      // construction (_togglePip early-returns elsewhere), but the guard makes
+      // that a property of this code rather than of a call three screens away.
+      if (_isPip && isDesktopWindow) {
         windowManager.setAlwaysOnTop(false);
         windowManager.setTitleBarStyle(TitleBarStyle.normal,
             windowButtonVisibility: true);
@@ -904,9 +940,7 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                _externalLaunchFailed
-                    ? Icons.error_outline
-                    : Icons.open_in_new,
+                _externalLaunchFailed ? Icons.error_outline : Icons.open_in_new,
                 size: 56,
                 color: _externalLaunchFailed
                     ? Theme.of(context).colorScheme.error
@@ -945,180 +979,200 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   @override
   Widget build(BuildContext context) {
     if (_external) return _buildExternalHandoff(context);
-    return Scaffold(
-      // No chrome in fullscreen — nor in PiP, where a title/back/shortcuts
-      // bar would swallow most of the tiny window.
-      appBar: _isFullscreen || _isPip
-          ? null
-          : AppBar(
-              title: Text(_title),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.keyboard_outlined),
-                  tooltip: AppLocalizations.of(context)!.keyboardShortcutsTitle,
-                  onPressed: () =>
-                      showShortcutsHelp(context, isVod: _isVod),
-                ),
-                if (_favoriteItem != null)
-                  AnimatedBuilder(
-                    animation: FavoritesService.instance,
-                    builder: (context, _) {
-                      final fav = _favoriteItem!;
-                      final isFav =
-                          FavoritesService.instance.isFavorite(fav.type, fav.id);
-                      return IconButton(
-                        icon: Icon(isFav ? Icons.star : Icons.star_border,
-                            color: isFav ? Colors.amber : null),
-                        onPressed: () => FavoritesService.instance.toggle(fav),
-                      );
-                    },
+    return PopScope(
+      // Back has to unwind fullscreen/PiP before it leaves the player. In
+      // fullscreen there is no app bar and the system bars are hidden, so on
+      // Android back is the only way out — without this a single press during
+      // a film would drop playback entirely instead of just showing the
+      // chrome again. Desktop reaches the same path via Escape.
+      canPop: !_isFullscreen && !_isPip,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (_isFullscreen) {
+          _toggleFullscreen();
+        } else if (_isPip) {
+          _togglePip();
+        }
+      },
+      child: Scaffold(
+        // No chrome in fullscreen — nor in PiP, where a title/back/shortcuts
+        // bar would swallow most of the tiny window.
+        appBar: _isFullscreen || _isPip
+            ? null
+            : AppBar(
+                title: Text(_title),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_outlined),
+                    tooltip:
+                        AppLocalizations.of(context)!.keyboardShortcutsTitle,
+                    onPressed: () => showShortcutsHelp(context, isVod: _isVod),
                   ),
-              ],
-            ),
-      body: Focus(
-        focusNode: _focusNode,
-        autofocus: true,
-        onKeyEvent: _handleKeyEvent,
-        child: Column(
-          children: [
-            Expanded(
-              child: MouseRegion(
-                onHover: (_) => _showControls(),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    // media_kit_video's own controls would just duplicate
-                    // ours - disable them entirely.
-                    Video(
-                      controller: _controller,
-                      controls: NoVideoControls,
-                      fit: _videoFit,
+                  if (_favoriteItem != null)
+                    AnimatedBuilder(
+                      animation: FavoritesService.instance,
+                      builder: (context, _) {
+                        final fav = _favoriteItem!;
+                        final isFav = FavoritesService.instance
+                            .isFavorite(fav.type, fav.id);
+                        return IconButton(
+                          icon: Icon(isFav ? Icons.star : Icons.star_border,
+                              color: isFav ? Colors.amber : null),
+                          onPressed: () =>
+                              FavoritesService.instance.toggle(fav),
+                        );
+                      },
                     ),
-                    // Radio: the video surface is black, so show the animated
-                    // audio visualizer on top of it. IgnorePointer keeps taps
-                    // flowing to the controls-toggle gesture layer below.
-                    if (_audioOnly)
+                ],
+              ),
+        body: Focus(
+          focusNode: _focusNode,
+          autofocus: true,
+          onKeyEvent: _handleKeyEvent,
+          child: Column(
+            children: [
+              Expanded(
+                child: MouseRegion(
+                  onHover: (_) => _showControls(),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // media_kit_video's own controls would just duplicate
+                      // ours - disable them entirely.
+                      Video(
+                        controller: _controller,
+                        controls: NoVideoControls,
+                        fit: _videoFit,
+                      ),
+                      // Radio: the video surface is black, so show the animated
+                      // audio visualizer on top of it. IgnorePointer keeps taps
+                      // flowing to the controls-toggle gesture layer below.
+                      if (_audioOnly)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: AudioOnlyVisualizer(title: _title),
+                          ),
+                        ),
+                      // Sits below the overlay in the stack, so taps land here
+                      // (toggling visibility) unless they hit a control above.
                       Positioned.fill(
-                        child: IgnorePointer(
-                          child: AudioOnlyVisualizer(title: _title),
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.translucent,
+                          onTap: _handleVideoTap,
+                          // The PiP window has no title bar to grab — dragging
+                          // the video itself moves it. (No-op outside PiP.)
+                          onPanStart: _isPip
+                              ? (_) => windowManager.startDragging()
+                              : null,
                         ),
                       ),
-                    // Sits below the overlay in the stack, so taps land here
-                    // (toggling visibility) unless they hit a control above.
-                    Positioned.fill(
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.translucent,
-                        onTap: _handleVideoTap,
-                        // The PiP window has no title bar to grab — dragging
-                        // the video itself moves it. (No-op outside PiP.)
-                        onPanStart: _isPip
-                            ? (_) => windowManager.startDragging()
-                            : null,
-                      ),
-                    ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: IgnorePointer(
-                        ignoring: !_controlsVisible,
-                        child: AnimatedOpacity(
-                          opacity: _controlsVisible ? 1 : 0,
-                          duration: const Duration(milliseconds: 200),
-                          // The EPG "now/next" strip rides with the controls
-                          // so it (and any "no guide data" note) fades away
-                          // with them instead of sitting on the video the
-                          // whole time you're watching.
-                          // PiP swaps the full control bar (which would cover
-                          // the whole mini window, leaving nothing to drag)
-                          // for a one-row micro bar.
-                          child: _isPip
-                              ? ExcludeFocus(
-                                  child: _PipControls(
-                                    isPlaying: _isPlaying,
-                                    onPlayPause: () => _player.playOrPause(),
-                                    onExitPip: _togglePip,
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: IgnorePointer(
+                          ignoring: !_controlsVisible,
+                          child: AnimatedOpacity(
+                            opacity: _controlsVisible ? 1 : 0,
+                            duration: const Duration(milliseconds: 200),
+                            // The EPG "now/next" strip rides with the controls
+                            // so it (and any "no guide data" note) fades away
+                            // with them instead of sitting on the video the
+                            // whole time you're watching.
+                            // PiP swaps the full control bar (which would cover
+                            // the whole mini window, leaving nothing to drag)
+                            // for a one-row micro bar.
+                            child: _isPip
+                                ? ExcludeFocus(
+                                    child: _PipControls(
+                                      isPlaying: _isPlaying,
+                                      onPlayPause: () => _player.playOrPause(),
+                                      onExitPip: _togglePip,
+                                    ),
+                                  )
+                                : Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (_epgFuture != null)
+                                        _EpgStrip(epgFuture: _epgFuture!),
+                                      // Keeps keyboard focus (and shortcuts) on the
+                                      // screen-level Focus above rather than letting
+                                      // the sliders/buttons steal it via Tab or click.
+                                      ExcludeFocus(
+                                        child: _ControlsOverlay(
+                                          isPlaying: _isPlaying,
+                                          isFullscreen: _isFullscreen,
+                                          volume: _volume,
+                                          muted: _muted,
+                                          position: _position,
+                                          duration: _duration,
+                                          seekDragValue: _seekDragValue,
+                                          showSeekControls: _isVod,
+                                          showSpeedControl: _isVod,
+                                          showChannelControls:
+                                              _canZap && !_isVod,
+                                          onPrevChannel: () => _zapBy(-1),
+                                          onNextChannel: () => _zapBy(1),
+                                          audioTracks: _audioTracks,
+                                          subtitleTracks: _subtitleTracks,
+                                          videoTracks: _videoTracks,
+                                          currentAudioId: _currentAudioId,
+                                          currentSubtitleId: _currentSubtitleId,
+                                          currentVideoId: _currentVideoId,
+                                          onAudioTrack: _setAudioTrack,
+                                          onSubtitleTrack: _setSubtitleTrack,
+                                          onVideoTrack: _setVideoTrack,
+                                          videoFit: _videoFit,
+                                          onVideoFitChanged: _setVideoFit,
+                                          playbackRate: _playbackRate,
+                                          onPlaybackRateChanged:
+                                              _setPlaybackRate,
+                                          onPlayPause: () =>
+                                              _player.playOrPause(),
+                                          onStop: _stop,
+                                          onSeekBack30: () => _seekBy(
+                                              const Duration(seconds: -30)),
+                                          onSeekBack10: () => _seekBy(
+                                              const Duration(seconds: -10)),
+                                          onSeekForward10: () => _seekBy(
+                                              const Duration(seconds: 10)),
+                                          onSeekForward30: () => _seekBy(
+                                              const Duration(seconds: 30)),
+                                          onToggleFullscreen: _toggleFullscreen,
+                                          isPip: _isPip,
+                                          onTogglePip: _togglePip,
+                                          onToggleMute: _toggleMute,
+                                          onVolumeChanged: _setVolume,
+                                          onSeekDragChanged: _onSeekDragChanged,
+                                          onSeekDragEnd: _onSeekDragEnd,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                )
-                              : Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              if (_epgFuture != null)
-                                _EpgStrip(epgFuture: _epgFuture!),
-                              // Keeps keyboard focus (and shortcuts) on the
-                              // screen-level Focus above rather than letting
-                              // the sliders/buttons steal it via Tab or click.
-                              ExcludeFocus(
-                                child: _ControlsOverlay(
-                              isPlaying: _isPlaying,
-                              isFullscreen: _isFullscreen,
-                              volume: _volume,
-                              muted: _muted,
-                              position: _position,
-                              duration: _duration,
-                              seekDragValue: _seekDragValue,
-                              showSeekControls: _isVod,
-                              showSpeedControl: _isVod,
-                              showChannelControls: _canZap && !_isVod,
-                              onPrevChannel: () => _zapBy(-1),
-                              onNextChannel: () => _zapBy(1),
-                              audioTracks: _audioTracks,
-                              subtitleTracks: _subtitleTracks,
-                              videoTracks: _videoTracks,
-                              currentAudioId: _currentAudioId,
-                              currentSubtitleId: _currentSubtitleId,
-                              currentVideoId: _currentVideoId,
-                              onAudioTrack: _setAudioTrack,
-                              onSubtitleTrack: _setSubtitleTrack,
-                              onVideoTrack: _setVideoTrack,
-                              videoFit: _videoFit,
-                              onVideoFitChanged: _setVideoFit,
-                              playbackRate: _playbackRate,
-                              onPlaybackRateChanged: _setPlaybackRate,
-                              onPlayPause: () => _player.playOrPause(),
-                              onStop: _stop,
-                              onSeekBack30: () =>
-                                  _seekBy(const Duration(seconds: -30)),
-                              onSeekBack10: () =>
-                                  _seekBy(const Duration(seconds: -10)),
-                              onSeekForward10: () =>
-                                  _seekBy(const Duration(seconds: 10)),
-                              onSeekForward30: () =>
-                                  _seekBy(const Duration(seconds: 30)),
-                              onToggleFullscreen: _toggleFullscreen,
-                              isPip: _isPip,
-                              onTogglePip: _togglePip,
-                              onToggleMute: _toggleMute,
-                              onVolumeChanged: _setVolume,
-                              onSeekDragChanged: _onSeekDragChanged,
-                              onSeekDragEnd: _onSeekDragEnd,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
                       ),
-                    ),
-                    // Connecting/buffering spinner - transparent to taps so
-                    // the video still toggles controls underneath.
-                    if (_buffering && _error == null)
-                      const Positioned.fill(
-                        child: IgnorePointer(child: _BufferingOverlay()),
-                      ),
-                    // Covers the (black) video with a clear reason + Retry when
-                    // the stream can't start or fails, instead of a dead frame.
-                    if (_error != null)
-                      Positioned.fill(
-                        child: _PlaybackErrorOverlay(
-                          message: _error!,
-                          onRetry: _retry,
+                      // Connecting/buffering spinner - transparent to taps so
+                      // the video still toggles controls underneath.
+                      if (_buffering && _error == null)
+                        const Positioned.fill(
+                          child: IgnorePointer(child: _BufferingOverlay()),
                         ),
-                      ),
-                  ],
+                      // Covers the (black) video with a clear reason + Retry when
+                      // the stream can't start or fails, instead of a dead frame.
+                      if (_error != null)
+                        Positioned.fill(
+                          child: _PlaybackErrorOverlay(
+                            message: _error!,
+                            onRetry: _retry,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -1266,17 +1320,14 @@ class _ControlsOverlay extends StatelessWidget {
     // media_kit always lists the "auto"/"no" pseudo-tracks; the real ones are
     // what decides whether a picker is worth showing. Audio needs a genuine
     // choice (>1); subtitles show whenever any exist (to toggle on/off).
-    final realAudio = audioTracks
-        .where((t) => t.id != 'auto' && t.id != 'no')
-        .toList();
-    final realSubtitles = subtitleTracks
-        .where((t) => t.id != 'auto' && t.id != 'no')
-        .toList();
+    final realAudio =
+        audioTracks.where((t) => t.id != 'auto' && t.id != 'no').toList();
+    final realSubtitles =
+        subtitleTracks.where((t) => t.id != 'auto' && t.id != 'no').toList();
     // Alternate video renditions (HLS quality variants). Only worth a picker
     // when there's a genuine choice — many streams expose a single video track.
-    final realVideo = videoTracks
-        .where((t) => t.id != 'auto' && t.id != 'no')
-        .toList();
+    final realVideo =
+        videoTracks.where((t) => t.id != 'auto' && t.id != 'no').toList();
     final showAudioMenu = realAudio.length > 1;
     final showSubtitleMenu = realSubtitles.isNotEmpty;
     final showVideoMenu = realVideo.length > 1;
@@ -1319,7 +1370,8 @@ class _ControlsOverlay extends StatelessWidget {
                             const RoundSliderThumbShape(enabledThumbRadius: 6),
                       ),
                       child: Slider(
-                        value: (seekDragValue ?? position.inMilliseconds.toDouble())
+                        value: (seekDragValue ??
+                                position.inMilliseconds.toDouble())
                             .clamp(
                                 0,
                                 duration.inMilliseconds > 0
@@ -1329,8 +1381,9 @@ class _ControlsOverlay extends StatelessWidget {
                         max: duration.inMilliseconds > 0
                             ? duration.inMilliseconds.toDouble()
                             : 1,
-                        onChanged:
-                            duration.inMilliseconds > 0 ? onSeekDragChanged : null,
+                        onChanged: duration.inMilliseconds > 0
+                            ? onSeekDragChanged
+                            : null,
                         onChangeEnd: onSeekDragEnd,
                       ),
                     ),
@@ -1349,7 +1402,11 @@ class _ControlsOverlay extends StatelessWidget {
                 children: [
                   const Icon(Icons.circle, color: Colors.redAccent, size: 10),
                   const SizedBox(width: 6),
-                  Text(l.liveBadge, style: const TextStyle(color: iconColor, fontSize: 12, fontWeight: FontWeight.bold)),
+                  Text(l.liveBadge,
+                      style: const TextStyle(
+                          color: iconColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold)),
                 ],
               ),
             ),
@@ -1499,8 +1556,9 @@ class _ControlsOverlay extends StatelessWidget {
                     ),
                 ],
               ),
-              // PiP and fullscreen manipulate the OS window — desktop-only.
-              if (isDesktopWindow) ...[
+              // This PiP shrinks the OS window itself, so it stays desktop-only
+              // — Android's native PiP is a different mechanism entirely.
+              if (isDesktopWindow)
                 IconButton(
                   icon: Icon(
                       isPip
@@ -1510,14 +1568,16 @@ class _ControlsOverlay extends StatelessWidget {
                   tooltip: isPip ? l.pipExit : l.pipEnter,
                   onPressed: onTogglePip,
                 ),
-                IconButton(
-                  icon: Icon(
-                      isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
-                      color: iconColor),
-                  tooltip: isFullscreen ? l.exitFullscreen : l.fullscreen,
-                  onPressed: onToggleFullscreen,
-                ),
-              ],
+              // Fullscreen is offered everywhere: an OS window on desktop, and
+              // immersive mode (status/nav bars hidden) on mobile, where a
+              // full-bleed video matters more than it does on a big screen.
+              IconButton(
+                icon: Icon(
+                    isFullscreen ? Icons.fullscreen_exit : Icons.fullscreen,
+                    color: iconColor),
+                tooltip: isFullscreen ? l.exitFullscreen : l.fullscreen,
+                onPressed: onToggleFullscreen,
+              ),
             ],
           ),
           Padding(
@@ -1684,7 +1744,8 @@ class _EpgStrip extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: LinearProgressIndicator(value: now.progress, minHeight: 3),
+                  child: LinearProgressIndicator(
+                      value: now.progress, minHeight: 3),
                 ),
               ),
               if (programs.length > 1)
