@@ -578,6 +578,8 @@
   "errBadResponse": "The server sent an unexpected response. Please try again later.",
   "errTimeout": "The connection to the server timed out.",
   "errUnreachable": "Could not reach the server. Check the URL and your connection.",
+  "errHttpsNotSupported": "This server doesn't accept secure connections on that port. Try http:// instead of https://.",
+  "errTlsHandshakeFailed": "Could not establish a secure connection to this server.",
   "errRateLimited": "The server is rate-limiting requests (429). Please try again later.",
   "errUnavailable": "The server is temporarily unavailable (503). Please try again later.",
   "errNoChannelsInPlaylist": "No channels found in this playlist.",

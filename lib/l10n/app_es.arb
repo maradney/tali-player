@@ -372,6 +372,8 @@
   "errBadResponse": "El servidor envió una respuesta inesperada. Inténtalo de nuevo más tarde.",
   "errTimeout": "Se agotó el tiempo de conexión con el servidor.",
   "errUnreachable": "No se pudo conectar con el servidor. Comprueba la URL y tu conexión.",
+  "errHttpsNotSupported": "Este servidor no acepta conexiones seguras en ese puerto. Prueba con http:// en lugar de https://.",
+  "errTlsHandshakeFailed": "No se pudo establecer una conexión segura con este servidor.",
   "errRateLimited": "El servidor está limitando las solicitudes (429). Inténtalo de nuevo más tarde.",
   "errUnavailable": "El servidor no está disponible temporalmente (503). Inténtalo de nuevo más tarde.",
   "errNoChannelsInPlaylist": "No se encontraron canales en esta lista de reproducción.",

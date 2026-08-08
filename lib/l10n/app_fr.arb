@@ -372,6 +372,8 @@
   "errBadResponse": "Le serveur a envoyé une réponse inattendue. Réessayez plus tard.",
   "errTimeout": "La connexion au serveur a expiré.",
   "errUnreachable": "Impossible de joindre le serveur. Vérifiez l'URL et votre connexion.",
+  "errHttpsNotSupported": "Ce serveur n'accepte pas les connexions sécurisées sur ce port. Essayez http:// au lieu de https://.",
+  "errTlsHandshakeFailed": "Impossible d'établir une connexion sécurisée avec ce serveur.",
   "errRateLimited": "Le serveur limite les requêtes (429). Réessayez plus tard.",
   "errUnavailable": "Le serveur est temporairement indisponible (503). Réessayez plus tard.",
   "errNoChannelsInPlaylist": "Aucune chaîne trouvée dans cette liste de lecture.",

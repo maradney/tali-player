@@ -372,6 +372,8 @@
   "errBadResponse": "Il server ha inviato una risposta inattesa. Riprova più tardi.",
   "errTimeout": "Connessione al server scaduta.",
   "errUnreachable": "Impossibile raggiungere il server. Controlla l'URL e la tua connessione.",
+  "errHttpsNotSupported": "Questo server non accetta connessioni sicure su quella porta. Prova http:// invece di https://.",
+  "errTlsHandshakeFailed": "Impossibile stabilire una connessione sicura con questo server.",
   "errRateLimited": "Il server sta limitando le richieste (429). Riprova più tardi.",
   "errUnavailable": "Il server è temporaneamente non disponibile (503). Riprova più tardi.",
   "errNoChannelsInPlaylist": "Nessun canale trovato in questa playlist.",

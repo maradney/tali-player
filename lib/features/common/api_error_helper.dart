@@ -29,6 +29,10 @@ String describeApiError(Object error, Account account, AppLocalizations l) {
         return l.errTimeout;
       case XtreamApiErrorKind.unreachable:
         return l.errUnreachable;
+      case XtreamApiErrorKind.httpsNotSupported:
+        return l.errHttpsNotSupported;
+      case XtreamApiErrorKind.tlsHandshakeFailed:
+        return l.errTlsHandshakeFailed;
       case XtreamApiErrorKind.rateLimited:
         return l.errRateLimited;
       case XtreamApiErrorKind.unavailable:

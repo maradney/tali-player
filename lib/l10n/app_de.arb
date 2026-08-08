@@ -372,6 +372,8 @@
   "errBadResponse": "Der Server hat eine unerwartete Antwort gesendet. Bitte später erneut versuchen.",
   "errTimeout": "Zeitüberschreitung bei der Verbindung zum Server.",
   "errUnreachable": "Server nicht erreichbar. Prüfe die URL und deine Verbindung.",
+  "errHttpsNotSupported": "Dieser Server akzeptiert auf diesem Port keine sicheren Verbindungen. Versuchen Sie http:// statt https://.",
+  "errTlsHandshakeFailed": "Es konnte keine sichere Verbindung zu diesem Server hergestellt werden.",
   "errRateLimited": "Der Server begrenzt die Anfragen (429). Bitte später erneut versuchen.",
   "errUnavailable": "Der Server ist vorübergehend nicht verfügbar (503). Bitte später erneut versuchen.",
   "errNoChannelsInPlaylist": "Keine Kanäle in dieser Playlist gefunden.",

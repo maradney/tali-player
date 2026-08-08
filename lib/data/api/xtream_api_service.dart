@@ -15,6 +15,7 @@ import '../models/series_item.dart';
 import '../models/series_info.dart';
 import '../services/diagnostics_log.dart';
 import 'credential_redaction.dart';
+import 'tls_failure.dart';
 
 /// How long a cached movie/series detail response (plot/cast/genre/
 /// seasons) is trusted before it's treated as stale and re-fetched.
@@ -39,6 +40,16 @@ const _interactiveMaxRetries = 2;
 /// the user should see). Mapped to l10n in `describeApiError`.
 enum XtreamApiErrorKind {
   invalidCredentials,
+
+  /// https:// against a port that only speaks plain HTTP - the usual mistake
+  /// with Xtream panels, which serve http:// on 8080. Kept separate from
+  /// [tlsHandshakeFailed] because the fix is one word in the URL.
+  httpsNotSupported,
+
+  /// TLS was attempted and failed for another reason (expired, self-signed or
+  /// mismatched certificate). Nothing the user can fix by editing the URL.
+  tlsHandshakeFailed,
+
   notXtreamPanel,
   badResponse,
   timeout,
@@ -449,6 +460,25 @@ class XtreamApiService {
             'Server is temporarily unavailable (503). Please try again later.',
             kind: XtreamApiErrorKind.unavailable,
           );
+        }
+        // A TLS handshake failure arrives as DioExceptionType.unknown, so it
+        // would otherwise fall through to the raw text below - which for the
+        // common case is "WRONG_VERSION_NUMBER(tls_record.cc:127)", hiding the
+        // fact that the fix is one word in the URL.
+        switch (classifyTlsFailure(e.error)) {
+          case TlsFailure.serverSpeaksPlainHttp:
+            throw XtreamApiException(
+              'This server does not accept secure connections on that port. '
+              'Try http:// instead of https://.',
+              kind: XtreamApiErrorKind.httpsNotSupported,
+            );
+          case TlsFailure.handshakeFailed:
+            throw XtreamApiException(
+              'Could not establish a secure connection to this server.',
+              kind: XtreamApiErrorKind.tlsHandshakeFailed,
+            );
+          case null:
+            break;
         }
         throw XtreamApiException(
           'Request failed: ${sanitizeErrorMessage(e.message ?? e.toString())}',

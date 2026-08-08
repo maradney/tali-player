@@ -372,6 +372,8 @@
   "errBadResponse": "O servidor enviou uma resposta inesperada. Tente novamente mais tarde.",
   "errTimeout": "A ligação ao servidor expirou.",
   "errUnreachable": "Não foi possível contactar o servidor. Verifique o URL e a sua ligação.",
+  "errHttpsNotSupported": "Este servidor não aceita ligações seguras nessa porta. Experimente http:// em vez de https://.",
+  "errTlsHandshakeFailed": "Não foi possível estabelecer uma ligação segura a este servidor.",
   "errRateLimited": "O servidor está a limitar os pedidos (429). Tente novamente mais tarde.",
   "errUnavailable": "O servidor está temporariamente indisponível (503). Tente novamente mais tarde.",
   "errNoChannelsInPlaylist": "Nenhum canal encontrado nesta lista de reprodução.",

@@ -372,6 +372,8 @@
   "errBadResponse": "Server mengirim respons tak terduga. Silakan coba lagi nanti.",
   "errTimeout": "Koneksi ke server habis waktu.",
   "errUnreachable": "Tidak dapat menghubungi server. Periksa URL dan koneksi Anda.",
+  "errHttpsNotSupported": "Server ini tidak menerima koneksi aman di port tersebut. Coba http:// alih-alih https://.",
+  "errTlsHandshakeFailed": "Tidak dapat membuat koneksi aman ke server ini.",
   "errRateLimited": "Server membatasi permintaan (429). Silakan coba lagi nanti.",
   "errUnavailable": "Server sementara tidak tersedia (503). Silakan coba lagi nanti.",
   "errNoChannelsInPlaylist": "Tidak ada saluran yang ditemukan di playlist ini.",

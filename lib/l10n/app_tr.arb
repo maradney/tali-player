@@ -372,6 +372,8 @@
   "errBadResponse": "Sunucu beklenmeyen bir yanıt gönderdi. Lütfen daha sonra tekrar deneyin.",
   "errTimeout": "Sunucu bağlantısı zaman aşımına uğradı.",
   "errUnreachable": "Sunucuya ulaşılamadı. URL'yi ve bağlantınızı kontrol edin.",
+  "errHttpsNotSupported": "Bu sunucu o bağlantı noktasında güvenli bağlantı kabul etmiyor. https:// yerine http:// deneyin.",
+  "errTlsHandshakeFailed": "Bu sunucuyla güvenli bir bağlantı kurulamadı.",
   "errRateLimited": "Sunucu istekleri sınırlandırıyor (429). Lütfen daha sonra tekrar deneyin.",
   "errUnavailable": "Sunucu geçici olarak kullanılamıyor (503). Lütfen daha sonra tekrar deneyin.",
   "errNoChannelsInPlaylist": "Bu oynatma listesinde kanal bulunamadı.",
