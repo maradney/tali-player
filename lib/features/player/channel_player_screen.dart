@@ -1015,12 +1015,17 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
             : AppBar(
                 title: Text(_title),
                 actions: [
-                  IconButton(
-                    icon: const Icon(Icons.keyboard_outlined),
-                    tooltip:
-                        AppLocalizations.of(context)!.keyboardShortcutsTitle,
-                    onPressed: () => showShortcutsHelp(context, isVod: _isVod),
-                  ),
+                  // A shortcuts reference is only useful where there are keys
+                  // to press. The key handlers themselves stay wired up, so an
+                  // attached keyboard still works - this only stops offering a
+                  // help sheet full of Space/arrows to someone on a phone.
+                  if (isDesktopWindow)
+                    IconButton(
+                      icon: const Icon(Icons.keyboard_outlined),
+                      tooltip:
+                          AppLocalizations.of(context)!.keyboardShortcutsTitle,
+                      onPressed: () => showShortcutsHelp(context, isVod: _isVod),
+                    ),
                   if (_favoriteItem != null)
                     AnimatedBuilder(
                       animation: FavoritesService.instance,

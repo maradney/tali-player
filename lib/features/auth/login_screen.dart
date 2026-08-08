@@ -14,6 +14,7 @@ import '../../data/sources/media_source.dart';
 import '../../l10n/app_localizations.dart';
 import '../common/api_error_helper.dart';
 import '../home/home_shell.dart';
+import '../profiles/profile_picker_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   /// When set, this screen is being used as an "add another playlist" flow
@@ -94,6 +95,22 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  /// Whether returning to the profile picker is meaningful: only when there is
+  /// more than one profile to pick between. A single-profile install has
+  /// nowhere to go back to, and a stray back arrow there would be a dead end
+  /// of its own.
+  bool get _canSwitchProfile =>
+      widget.onAdded == null && ProfilesService.instance.profiles.length > 1;
+
+  /// Returns to the picker, replacing this route rather than popping it -
+  /// there is nothing beneath it to pop to.
+  void _backToProfilePicker() {
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const ProfilePickerScreen()),
+      (route) => false,
+    );
+  }
+
   /// Picks a local .m3u/.m3u8 file and puts its path in the URL field — the
   /// M3U fetcher reads bare paths from disk like it reads URLs.
   Future<void> _browsePlaylistFile() async {
@@ -148,7 +165,23 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context)!;
     return Scaffold(
-      appBar: widget.onAdded != null ? AppBar() : null,
+      // In add-playlist mode this is a pushed route, so a plain AppBar gives
+      // the usual back arrow. As the profile's first screen it is the whole
+      // navigation stack (the picker pushAndRemoveUntil's to it), so there is
+      // nothing to pop and no chrome at all - entering a profile with no
+      // playlist yet, which a freshly created kids profile always is, left you
+      // with no way back to the picker at all. Offer the way out explicitly.
+      appBar: widget.onAdded != null
+          ? AppBar()
+          : _canSwitchProfile
+              ? AppBar(
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    tooltip: l.switchProfile,
+                    onPressed: _backToProfilePicker,
+                  ),
+                )
+              : null,
       body: SafeArea(
         child: Center(
           // Scrollable because the form is taller than the viewport whenever

@@ -59,6 +59,21 @@ class PosterGrid<T> extends StatelessWidget {
   // size, which is what makes maximizing the window actually enlarge the
   // posters instead of just adding more of them.
   static const _gridPadding = 12.0;
+
+  /// Grid columns for [available] width at a given [idealTileWidth].
+  ///
+  /// Rounds to the nearest column count rather than always up. Rounding up
+  /// made the density setting do nothing on narrow windows: at a phone's ~387
+  /// usable pixels, Comfortable (200) and Spacious (260) both ceil()'d to 2
+  /// columns and rendered identically, and the same collision happens on a
+  /// desktop window around 800px (4 and 4). Nearest keeps the three densities
+  /// distinct wherever there are enough pixels to distinguish them, at the
+  /// cost of tiles sometimes being slightly wider than ideal instead of
+  /// always slightly narrower.
+  static int posterColumnsFor(double available, double idealTileWidth) {
+    if (available <= 0 || idealTileWidth <= 0) return 1;
+    return (available / idealTileWidth).round().clamp(1, 100);
+  }
   static const _spacing = 12.0;
 
   // Real poster proportions, applied via an explicit AspectRatio box
@@ -87,8 +102,7 @@ class PosterGrid<T> extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final available = constraints.maxWidth - _gridPadding * 2;
-        final crossAxisCount =
-            (available / idealTileWidth).ceil().clamp(1, 100);
+        final crossAxisCount = posterColumnsFor(available, idealTileWidth);
         final tileWidth =
             (available - _spacing * (crossAxisCount - 1)) / crossAxisCount;
         final tileHeight =

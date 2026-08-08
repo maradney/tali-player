@@ -411,7 +411,14 @@ class _HomeShellState extends State<HomeShell> {
           // back to Home (which may not be in _visitedTabs after an account
           // switch reset it) — otherwise the fallback would render a blank.
           _visitedTabs.contains(i) || i == selectedIndex
-              ? screens[i]
+              // Each tab gets its own scroll observer. An AppBar takes its
+              // "scrolled under" tint from the nearest one, and with a single
+              // shared observer above the IndexedStack every tab's AppBar saw
+              // every other tab's scrolling: scrolling Live TV tinted the
+              // Series app bar too, so switching tabs showed the wrong colour
+              // until you scrolled that tab down and back up. Hidden tabs
+              // emit nothing, so each bar now reflects only its own list.
+              ? ScrollNotificationObserver(child: screens[i])
               : const SizedBox.shrink(),
       ],
     );

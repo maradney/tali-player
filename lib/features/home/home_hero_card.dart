@@ -45,28 +45,40 @@ class HomeHeroCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 4),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: SizedBox(
-          height: 180,
+        // A minimum rather than a fixed height. At 180 exactly, a long title
+        // wrapping to its second line - or any text scale above the default -
+        // pushed the resume button past the bottom, where the ClipRRect cut it
+        // off silently instead of overflowing visibly. The card can now grow
+        // for the content it actually has.
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 180),
           child: Stack(
-            fit: StackFit.expand,
             children: [
-              // Backdrop: the poster blown up + blurred, behind a dark scrim.
-              Container(color: _backdropFallback),
+              // Backdrop layers are Positioned.fill so they stretch to the
+              // card without contributing to its size - otherwise the blurred
+              // poster's intrinsic height would decide how tall the card is.
+              // The foreground below is the only non-positioned child, so it
+              // is what the card sizes itself to.
+              Positioned.fill(child: Container(color: _backdropFallback)),
               if (posterUrl != null)
-                ImageFiltered(
-                  imageFilter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: CachedPosterImage(
-                    imageUrl: posterUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                Positioned.fill(
+                  child: ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: CachedPosterImage(
+                      imageUrl: posterUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                    ),
                   ),
                 ),
-              const DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: AlignmentDirectional.centerStart,
-                    end: AlignmentDirectional.centerEnd,
-                    colors: [Color(0xCC10141A), Color(0x8010141A)],
+              const Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: AlignmentDirectional.centerStart,
+                      end: AlignmentDirectional.centerEnd,
+                      colors: [Color(0xCC10141A), Color(0x8010141A)],
+                    ),
                   ),
                 ),
               ),
@@ -79,18 +91,26 @@ class HomeHeroCard extends StatelessWidget {
                     padding: const EdgeInsets.all(16),
                     child: Row(
                       children: [
-                        AspectRatio(
-                          aspectRatio: 2 / 3,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: posterUrl != null
-                                ? CachedPosterImage(
-                                    imageUrl: posterUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) =>
-                                        const _HeroThumbFallback(),
-                                  )
-                                : const _HeroThumbFallback(),
+                        // Explicit height (the old 180 card minus its 16pt
+                        // padding) rather than stretching: now that the card
+                        // sizes to its content, an AspectRatio in a Row has no
+                        // bounded height to work from, and a long title would
+                        // otherwise make the poster grow with it.
+                        SizedBox(
+                          height: 148,
+                          child: AspectRatio(
+                            aspectRatio: 2 / 3,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: posterUrl != null
+                                  ? CachedPosterImage(
+                                      imageUrl: posterUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) =>
+                                          const _HeroThumbFallback(),
+                                    )
+                                  : const _HeroThumbFallback(),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 16),
