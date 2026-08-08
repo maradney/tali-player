@@ -27,6 +27,7 @@ import '../../platform_capabilities.dart';
 import '../common/pin_dialogs.dart';
 import 'shortcuts_help.dart';
 import 'audio_only_visualizer.dart';
+import 'fullscreen_orientation.dart';
 import 'screen_awake.dart';
 import 'stream_failure.dart';
 import 'track_labels.dart';
@@ -771,6 +772,15 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       await SystemChrome.setEnabledSystemUIMode(
         next ? SystemUiMode.immersiveSticky : SystemUiMode.edgeToEdge,
       );
+      // Turn the phone sideways with it: held upright, a 16:9 video occupies
+      // barely a third of the screen, so "fullscreen" in portrait isn't much
+      // of one. Leaving fullscreen hands orientation back to the device.
+      await SystemChrome.setPreferredOrientations(
+        next
+            ? fullscreenOrientationsFor(
+                width: _player.state.width, height: _player.state.height)
+            : DeviceOrientation.values,
+      );
     }
     if (mounted) setState(() => _isFullscreen = next);
   }
@@ -784,6 +794,9 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       windowManager.setFullScreen(false);
     } else {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+      // Leaving the player mid-fullscreen must not strand the rest of the app
+      // locked to landscape.
+      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     }
   }
 
