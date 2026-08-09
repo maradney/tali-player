@@ -22,7 +22,7 @@ val keystoreProperties = Properties().apply {
 val hasReleaseKeystore = keystoreProperties.getProperty("storeFile") != null
 
 android {
-    namespace = "com.maradney.iptv_player"
+    namespace = "io.github.maradney.tali"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -35,7 +35,12 @@ android {
         // Permanent once published — Play identifies the app by this and it can
         // never be changed afterwards. Deliberately not derived from appName in
         // app_info.dart: renaming the app must not orphan existing installs.
-        applicationId = "com.maradney.iptv_player"
+        //
+        // io.github.<username> rather than a reverse domain, because there is no
+        // maradney.com to reverse. Play never verifies domain ownership, but a
+        // GitHub namespace is one the author demonstrably controls, which is the
+        // convention F-Droid and Maven Central point at for exactly this case.
+        applicationId = "io.github.maradney.tali"
         // Flutter's default (24) already clears the highest floor our plugins
         // impose (flutter_secure_storage 10.x needs 23), so we track the SDK's
         // tested default rather than pinning a number that would silently drift.
