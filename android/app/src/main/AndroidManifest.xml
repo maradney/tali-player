@@ -7,11 +7,13 @@
          only appears in the artifact users actually get. -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <!-- android:label is the launcher name. It must be kept in step with
-         appName in lib/app_info.dart by hand: the manifest is read by the OS
-         long before any Dart runs, so it cannot be sourced from there. -->
+    <!-- android:label is the launcher name. It cannot be sourced from
+         appName in lib/app_info.dart - the manifest is read by the OS long
+         before any Dart runs - so it lives in res/values/strings.xml and
+         app_name_matches_test.dart asserts the two never drift apart.
+         res/values-ar/ overrides it with the Arabic spelling. -->
     <application
-        android:label="IPTV Player"
+        android:label="@string/app_name"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="false"

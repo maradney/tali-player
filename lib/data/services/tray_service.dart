@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
+import '../../app_info.dart';
 import '../../l10n/app_localizations.dart';
 
 /// Windows system-tray integration: an opt-in "keep running in the tray"
@@ -74,7 +75,7 @@ class TrayService extends ChangeNotifier with TrayListener, WindowListener {
   Future<void> _buildMenu(Locale locale) async {
     final l = _lookup(locale);
     _menuLocale = locale;
-    await trayManager.setToolTip('IPTV Player');
+    await trayManager.setToolTip(appName);
     await trayManager.setContextMenu(Menu(items: [
       MenuItem(key: _menuShow, label: l.trayShowWindow),
       MenuItem.separator(),

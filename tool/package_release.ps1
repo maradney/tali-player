@@ -2,7 +2,7 @@
 #
 #   powershell -ExecutionPolicy Bypass -File tool\package_release.ps1
 #
-# Output: dist\iptv_player-<version>-windows-x64.zip
+# Output: dist\tali-<version>-windows-x64.zip
 # The version is read from pubspec.yaml, so bumping it there is the only step
 # needed for the next release.
 
@@ -21,12 +21,12 @@ flutter build windows --release
 if ($LASTEXITCODE -ne 0) { throw 'flutter build failed' }
 
 $releaseDir = 'build\windows\x64\runner\Release'
-if (-not (Test-Path "$releaseDir\iptv_player.exe")) {
-    throw "Build output missing: $releaseDir\iptv_player.exe"
+if (-not (Test-Path "$releaseDir\tali.exe")) {
+    throw "Build output missing: $releaseDir\tali.exe"
 }
 
 # --- Stage the distributable folder ---
-$stage = "dist\iptv_player-$version-windows-x64"
+$stage = "dist\tali-$version-windows-x64"
 if (Test-Path $stage) { Remove-Item -Recurse -Force $stage }
 New-Item -ItemType Directory -Force $stage | Out-Null
 Copy-Item "$releaseDir\*" $stage -Recurse
@@ -64,7 +64,7 @@ foreach ($doc in 'README.md', 'LICENSE', 'CHANGELOG.md', 'POLICY.md') {
 }
 
 # --- Zip it ---
-$zip = "dist\iptv_player-$version-windows-x64.zip"
+$zip = "dist\tali-$version-windows-x64.zip"
 if (Test-Path $zip) { Remove-Item -Force $zip }
 Compress-Archive -Path "$stage\*" -DestinationPath $zip
 $sizeMb = [math]::Round((Get-Item $zip).Length / 1MB, 1)

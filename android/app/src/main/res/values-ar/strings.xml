@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The name is Arabic to begin with, so an Arabic device shows it in its
+         own script rather than a transliteration. -->
+    <string name="app_name">تالي</string>
+</resources>

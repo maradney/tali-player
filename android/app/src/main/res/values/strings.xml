@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The launcher name. Must stay in step with appName in lib/app_info.dart;
+         app_name_matches_test.dart fails the build if they drift apart. -->
+    <string name="app_name">Tali</string>
+</resources>

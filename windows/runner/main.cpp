@@ -31,7 +31,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // vertical room than a 720px window gives. (A short window still works - the
   // rail scrolls - this just makes everything visible by default.)
   Win32Window::Size size(1280, 900);
-  if (!window.Create(L"iptv_player", origin, size)) {
+  // Only the pre-Flutter title; main.dart replaces it with appName via
+  // windowManager.setTitle once Dart is up.
+  if (!window.Create(L"Tali", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

@@ -8,11 +8,11 @@
 /// rename never breaks imports or the build. Likewise, "IPTV" used as a
 /// technology term (e.g. "IPTV subscription") is domain language, not the
 /// app's name, and isn't sourced from here.
-const appName = 'IPTV Player';
+const appName = 'Tali';
 
 /// A filesystem-safe, lowercase slug of [appName] - used where the name
 /// needs to appear as an identifier-ish string (e.g. the suggested export
-/// filename) so those track the display name too. 'IPTV Player' -> 'iptv_player'.
+/// filename) so those track the display name too. 'My TV App' -> 'my_tv_app'.
 String get appSlug => appName
     .toLowerCase()
     .replaceAll(RegExp(r'[^a-z0-9]+'), '_')

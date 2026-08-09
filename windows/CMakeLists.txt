@@ -1,10 +1,11 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
-project(iptv_player LANGUAGES CXX)
+project(tali LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
-# the on-disk name of your application.
-set(BINARY_NAME "iptv_player")
+# the on-disk name of your application. Kept equal to appSlug in
+# lib/app_info.dart; tool/package_release.ps1 looks for tali.exe by name.
+set(BINARY_NAME "tali")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

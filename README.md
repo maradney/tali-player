@@ -1,6 +1,6 @@
-# IPTV Player
+# Tali
 
-A Windows desktop IPTV client for **subscriptions you already have**, built
+Tali (تالي — Arabic for "next") is a Windows desktop IPTV client for **subscriptions you already have**, built
 with Flutter. Connects to Xtream Codes panels or loads M3U/M3U8 playlists
 (URL or local file).
 
@@ -40,9 +40,9 @@ features that will never be built.
 
 ## Install (Windows)
 
-1. Download the latest `iptv_player-<version>-windows-x64.zip` from
+1. Download the latest `tali-<version>-windows-x64.zip` from
    [Releases](../../releases).
-2. Extract it anywhere and run `iptv_player.exe`.
+2. Extract it anywhere and run `tali.exe`.
 
 > **"Windows protected your PC"?** The app is open-source but not
 > code-signed (certificates cost money this donation-funded project doesn't
