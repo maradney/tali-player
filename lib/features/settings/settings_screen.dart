@@ -23,6 +23,7 @@ import '../../l10n/app_localizations.dart';
 import '../accounts/accounts_screen.dart';
 import '../common/disclaimer_dialog.dart';
 import '../common/pin_dialogs.dart';
+import '../common/poster_cache_repair.dart';
 import '../downloads/downloads_screen.dart';
 import 'account_status_card.dart';
 import 'diagnostics_screen.dart';
@@ -50,6 +51,10 @@ class SettingsScreen extends StatelessWidget {
   Future<void> _clearImageCache(BuildContext context) async {
     final l = AppLocalizations.of(context)!;
     await DefaultCacheManager().emptyCache();
+    // Nothing is cached any more, so the one-repair-per-URL guard has nothing
+    // left to protect against - without this, a poster already repaired this
+    // session would never be retried again.
+    PosterCacheRepair.instance.forgetAll();
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(l.imageCacheCleared)),

@@ -12,6 +12,7 @@ import '../../data/models/search_result.dart';
 import '../../data/services/diagnostics_log.dart';
 import '../../data/sources/media_source.dart';
 import '../../l10n/app_localizations.dart';
+import '../common/poster_cache_repair.dart';
 
 /// Settings > Diagnostics: a support/debugging screen built from local data.
 /// System info, an on-demand connectivity test against the active panel, the
@@ -102,6 +103,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   Future<void> _clearImageCache() async {
     final l = AppLocalizations.of(context)!;
     await DefaultCacheManager().emptyCache();
+    PosterCacheRepair.instance.forgetAll();
     if (!mounted) return;
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(l.imageCacheCleared)));
