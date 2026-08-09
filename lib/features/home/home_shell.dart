@@ -411,14 +411,7 @@ class _HomeShellState extends State<HomeShell> {
           // back to Home (which may not be in _visitedTabs after an account
           // switch reset it) — otherwise the fallback would render a blank.
           _visitedTabs.contains(i) || i == selectedIndex
-              // Each tab gets its own scroll observer. An AppBar takes its
-              // "scrolled under" tint from the nearest one, and with a single
-              // shared observer above the IndexedStack every tab's AppBar saw
-              // every other tab's scrolling: scrolling Live TV tinted the
-              // Series app bar too, so switching tabs showed the wrong colour
-              // until you scrolled that tab down and back up. Hidden tabs
-              // emit nothing, so each bar now reflects only its own list.
-              ? ScrollNotificationObserver(child: screens[i])
+              ? screens[i]
               : const SizedBox.shrink(),
       ],
     );
@@ -499,28 +492,12 @@ class _HomeShellState extends State<HomeShell> {
         }
 
         return Scaffold(
-          appBar: AppBar(
-            title: _AccountSwitcherButton(
-              account: account,
-              onTap: _openAccounts,
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.switch_account_outlined),
-                tooltip: l.switchProfile,
-                onPressed: _switchProfile,
-              ),
-              IconButton(
-                icon: const Icon(Icons.settings_outlined),
-                tooltip: l.settingsTitle,
-                onPressed: () => _openSettings(account),
-              ),
-              IconButton(
-                icon: const Icon(Icons.info_outline),
-                tooltip: l.settingsAboutThisApp,
-                onPressed: () => showDisclaimerDialog(context),
-              ),
-            ],
+          appBar: ShellAppBar(
+            account: account,
+            onOpenAccounts: _openAccounts,
+            onSwitchProfile: _switchProfile,
+            onOpenSettings: () => _openSettings(account),
+            onOpenAbout: () => showDisclaimerDialog(context),
           ),
           // Narrow: the sync card takes its own strip above the nav bar rather
           // than floating, which on a phone covered the bottom row of posters.
@@ -533,6 +510,65 @@ class _HomeShellState extends State<HomeShell> {
           bottomNavigationBar: _buildBottomBar(l, visible, selectedIndex),
         );
       },
+    );
+  }
+}
+
+/// The narrow-layout shell bar: which playlist is active, plus profile,
+/// settings and about. Only exists below [_wideLayoutBreakpoint] — the wide
+/// layout puts all of this in the NavigationRail instead.
+///
+/// It sits *above* each tab screen's own app bar, so nothing ever scrolls
+/// under this one; the bar directly over the content is the one that should
+/// pick up the scrolled-under tint. Reacting to scroll here was also actively
+/// broken: a Scaffold wraps its whole subtree (this bar included) in a
+/// ScrollNotificationObserver, and observers pass notifications on upward, so
+/// this bar received every tab's scrolling no matter how many observers sat
+/// between. Switching tabs emits no scroll notification, so it kept whichever
+/// tint the last tab left behind until you scrolled the new tab down and back
+/// up. Ignoring scroll outright is both the correct semantics and the fix.
+class ShellAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final Account account;
+  final VoidCallback onOpenAccounts;
+  final VoidCallback onSwitchProfile;
+  final VoidCallback onOpenSettings;
+  final VoidCallback onOpenAbout;
+
+  const ShellAppBar({
+    super.key,
+    required this.account,
+    required this.onOpenAccounts,
+    required this.onSwitchProfile,
+    required this.onOpenSettings,
+    required this.onOpenAbout,
+  });
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return AppBar(
+      notificationPredicate: (_) => false,
+      title: _AccountSwitcherButton(account: account, onTap: onOpenAccounts),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.switch_account_outlined),
+          tooltip: l.switchProfile,
+          onPressed: onSwitchProfile,
+        ),
+        IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          tooltip: l.settingsTitle,
+          onPressed: onOpenSettings,
+        ),
+        IconButton(
+          icon: const Icon(Icons.info_outline),
+          tooltip: l.settingsAboutThisApp,
+          onPressed: onOpenAbout,
+        ),
+      ],
     );
   }
 }
