@@ -416,20 +416,52 @@ class _EpisodeList extends StatefulWidget {
 }
 
 class _EpisodeListState extends State<_EpisodeList> {
-  final _highlightKey = GlobalKey();
+  /// Attached to the highlighted row *only* until it has been scrolled into
+  /// view, then dropped.
+  ///
+  /// A GlobalKey that stays on a lazily-built list child is the reason the
+  /// selected episode used to smear across the description above the list: as
+  /// the row leaves and re-enters the viewport, ListView recycles it, and a
+  /// GlobalKey turns that recycling into element reparenting - the row gets
+  /// deactivated and re-adopted, and could be painted at a stale offset
+  /// outside the sliver's clip. It was the whole tile escaping, not just its
+  /// colour: the "Continue watching" label came with it.
+  ///
+  /// The key is only ever needed for one ensureVisible call, which reads the
+  /// render object once and then animates the scroll position, so nothing
+  /// depends on it afterwards.
+  GlobalKey? _highlightKey;
 
   @override
   void initState() {
     super.initState();
-    if (widget.highlightEpisodeId != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        final ctx = _highlightKey.currentContext;
-        if (ctx != null) {
-          Scrollable.ensureVisible(ctx,
-              alignment: 0.3, duration: const Duration(milliseconds: 300));
-        }
-      });
+    _scrollHighlightIntoView();
+  }
+
+  @override
+  void didUpdateWidget(_EpisodeList old) {
+    super.didUpdateWidget(old);
+    // Finishing an episode elsewhere moves the highlight; bring the new one
+    // into view the same way.
+    if (old.highlightEpisodeId != widget.highlightEpisodeId) {
+      _scrollHighlightIntoView();
     }
+  }
+
+  void _scrollHighlightIntoView() {
+    if (widget.highlightEpisodeId == null) return;
+    setState(() => _highlightKey = GlobalKey());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final ctx = _highlightKey?.currentContext;
+      if (ctx != null) {
+        Scrollable.ensureVisible(ctx,
+            alignment: 0.3, duration: const Duration(milliseconds: 300));
+      }
+      // Detach immediately: the scroll is already under way, and leaving the
+      // key attached is what caused the smearing.
+      setState(() => _highlightKey = null);
+    });
   }
 
   @override
