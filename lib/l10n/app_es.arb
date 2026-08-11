@@ -69,6 +69,8 @@
   "play": "Reproducir",
   "stop": "Detener",
   "resume": "Reanudar",
+  "showMore": "Mostrar más",
+  "showLess": "Mostrar menos",
   "licenses": "Licencias",
   "iUnderstand": "Entendido",
   "and": "y",

@@ -28,7 +28,9 @@ import '../common/pin_dialogs.dart';
 import 'shortcuts_help.dart';
 import 'audio_only_visualizer.dart';
 import 'fullscreen_orientation.dart';
+import 'resume_guard.dart';
 import 'screen_awake.dart';
+import 'seek_accumulator.dart';
 import 'stream_failure.dart';
 import 'track_labels.dart';
 import 'video_fit.dart';
@@ -193,6 +195,16 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   Timer? _startTimeoutTimer;
   static const _openTimeout = Duration(seconds: 20);
 
+  // Stops a stream that stalled or failed near zero from overwriting a real
+  // resume point with its own failure. See [ResumeGuard].
+  ResumeGuard? _resumeGuard;
+
+  // Collapses a burst of skip-button presses into one seek. See
+  // [SeekAccumulator].
+  late final SeekAccumulator _seekAccumulator = SeekAccumulator(
+    onSeek: (total) => unawaited(_applySeekDelta(total)),
+  );
+
   // Live streams drop transiently; recover silently up to this many times (like
   // VLC) before surfacing an error, so a blip doesn't force reopening the
   // channel. Reset whenever playback (re)starts or the user switches channel.
@@ -345,6 +357,9 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       // Ignore position updates while dragging so the thumb doesn't jump
       // around under the user's finger/cursor.
       if (position > Duration.zero) _markStarted();
+      // Tells the guard when a resume seek has actually landed, after which
+      // ordinary saving resumes.
+      _resumeGuard?.observe(position);
       if (!mounted || _seekDragValue != null) return;
       setState(() {
         // Advancing position means the picture is moving — definitely not
@@ -395,9 +410,12 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
 
     final ref = widget.playbackRef;
     if (ref != null) {
+      final saved = PlaybackService.instance.progressFor(ref.type, ref.id);
+      // Built before the timer starts: its first tick can land while the
+      // stream is still opening, which is exactly the case being guarded.
+      _resumeGuard = ResumeGuard(savedPosition: saved?.position);
       _progressTimer =
           Timer.periodic(const Duration(seconds: 5), (_) => _saveProgress(ref));
-      final saved = PlaybackService.instance.progressFor(ref.type, ref.id);
       if (saved != null && saved.position > _resumeThreshold) {
         _player.pause();
         WidgetsBinding.instance
@@ -646,7 +664,12 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     );
     if (!mounted) return;
     if (resume == true) {
+      _resumeGuard?.resumeChosen();
       await _player.seek(saved.position);
+    } else {
+      // Explicitly discarding the mark is the one case where writing a small
+      // position back over a large one is what the user asked for.
+      _resumeGuard?.startOverChosen();
     }
     _player.play();
   }
@@ -657,6 +680,12 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     // Duration isn't known until the stream has actually started loading.
     if (total == Duration.zero) return;
     if (position < _resumeThreshold) return;
+    // A stalled or failed stream sits near zero while this timer keeps
+    // firing; without this it would write that over a real resume point.
+    if (!(_resumeGuard?.allowsSaving(position, hasError: _error != null) ??
+        _error == null)) {
+      return;
+    }
 
     if (position.inMilliseconds / total.inMilliseconds >= _finishedFraction) {
       // Treat as finished rather than "in progress" so reopening this
@@ -687,7 +716,21 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     if (_isVod) await _player.seek(Duration.zero);
   }
 
-  Future<void> _seekBy(Duration delta) async {
+  /// Queues a skip. Repeated presses are summed and sent as one seek once they
+  /// stop, so hunting for a moment costs one Range request instead of one per
+  /// tap - see [SeekAccumulator].
+  void _seekBy(Duration delta) {
+    if (!_isVod) return;
+    _seekAccumulator.add(delta);
+    // Move the scrubber straight away so the button still feels instant.
+    final total = _player.state.duration;
+    var preview = _position + _seekAccumulator.pending;
+    if (preview < Duration.zero) preview = Duration.zero;
+    if (total > Duration.zero && preview > total) preview = total;
+    setState(() => _position = preview);
+  }
+
+  Future<void> _applySeekDelta(Duration delta) async {
     // Live channels aren't genuinely seekable - there's no fixed duration
     // to seek within, and asking mpv to seek past the live edge throws
     // "not seekable" ("--force-seekable=yes") instead of clamping quietly.
@@ -700,7 +743,26 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     await _player.seek(target);
   }
 
+  void _showFullTitle() {
+    final l = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        content: SelectableText(_title),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l.close),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _onSeekDragChanged(double value) {
+    // Dragging supersedes any queued skips - committing them afterwards would
+    // yank playback away from where the user just put it.
+    _seekAccumulator.cancel();
     setState(() => _seekDragValue = value);
   }
 
@@ -911,6 +973,9 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     _progressTimer?.cancel();
     _hideControlsTimer?.cancel();
     _startTimeoutTimer?.cancel();
+    // Drop rather than flush: seeking a player that is being torn down is
+    // pointless, and the final _saveProgress below wants the real position.
+    _seekAccumulator.dispose();
     _focusNode.dispose();
     // In external-playback mode the media_kit player was never created, and
     // there's no in-app position to save.
@@ -1013,7 +1078,17 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
         appBar: _isFullscreen || _isPip
             ? null
             : AppBar(
-                title: Text(_title),
+                // A long episode title ellipsizes in the bar with no way to
+                // read the rest, and on a phone almost all of them do. Tapping
+                // it shows the whole thing; a tooltip covers pointer devices,
+                // where there is nothing to tap with.
+                title: Tooltip(
+                  message: _title,
+                  child: InkWell(
+                    onTap: () => _showFullTitle(),
+                    child: Text(_title),
+                  ),
+                ),
                 actions: [
                   // A shortcuts reference is only useful where there are keys
                   // to press. The key handlers themselves stay wired up, so an

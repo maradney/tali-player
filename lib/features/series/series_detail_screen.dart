@@ -15,6 +15,7 @@ import '../../l10n/app_localizations.dart';
 import '../common/api_error_helper.dart';
 import '../common/browse_states.dart';
 import '../common/cached_poster_image.dart';
+import '../common/expandable_text.dart';
 import '../common/poster_backdrop.dart';
 import '../downloads/download_button.dart';
 import '../player/channel_player_screen.dart';
@@ -347,7 +348,7 @@ class _SeriesHeader extends StatelessWidget {
                 if (info?.cast != null) _InfoRow(label: l.cast, value: info!.cast!),
                 if (info?.plot != null) ...[
                   const SizedBox(height: 6),
-                  Text(info!.plot!, maxLines: 4, overflow: TextOverflow.ellipsis),
+                  ExpandableText(text: info!.plot!, collapsedLines: 4),
                 ],
               ],
             ),

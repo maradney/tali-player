@@ -1,13 +1,11 @@
 {
   "@@locale": "en",
-
   "navLiveTv": "Live TV",
   "navMovies": "Movies",
   "navSeries": "Series",
   "navFavorites": "Favorites",
   "navHistory": "History",
   "navSearch": "Search",
-
   "liveTvTitle": "Live TV",
   "moviesTitle": "Movies",
   "seriesTitle": "Series",
@@ -16,7 +14,6 @@
   "searchTitle": "Search",
   "settingsTitle": "Settings",
   "playlistsTitle": "Playlists",
-
   "retry": "Retry",
   "cancel": "Cancel",
   "remove": "Remove",
@@ -31,7 +28,6 @@
   "tabLive": "Live",
   "tabMovies": "Movies",
   "tabSeries": "Series",
-
   "settingsAccount": "Account",
   "settingsPlaylists": "Playlists",
   "settingsAppearance": "Appearance",
@@ -40,10 +36,8 @@
   "settingsDataStorage": "Data & storage",
   "settingsBackup": "Backup",
   "settingsAbout": "About",
-
   "settingsLanguage": "Language",
   "languageSystem": "System default",
-
   "settingsManagePlaylists": "Manage playlists",
   "settingsManagePlaylistsSubtitle": "Switch, add, or remove Xtream accounts",
   "settingsFont": "Font",
@@ -63,7 +57,6 @@
   "settingsExport": "Export settings",
   "settingsImport": "Import settings",
   "settingsAboutThisApp": "About this app",
-
   "unlock": "Unlock",
   "lock": "Lock",
   "save": "Save",
@@ -76,11 +69,18 @@
   "play": "Play",
   "stop": "Stop",
   "resume": "Resume",
+  "showMore": "Show more",
+  "@showMore": {
+    "description": "Expands a clamped description to its full text"
+  },
+  "showLess": "Show less",
+  "@showLess": {
+    "description": "Collapses an expanded description again"
+  },
   "licenses": "Licenses",
   "iUnderstand": "I understand",
   "and": "and",
   "system": "System",
-
   "pinEnter": "Enter PIN",
   "pinEnterCurrent": "Enter current PIN",
   "pinIncorrect": "Incorrect PIN",
@@ -89,7 +89,11 @@
   "pinConfirm": "Confirm PIN",
   "pinTooShort": "PIN must be at least {count} digits",
   "@pinTooShort": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "pinMismatch": "PINs do not match",
   "pinRemoveTitle": "Remove PIN?",
@@ -101,33 +105,54 @@
   "unlockItemTitle": "Unlock this item?",
   "lockAddedBody": "\"{name}\" will require the PIN to open from now on.",
   "@lockAddedBody": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "lockRemovedBody": "\"{name}\" will no longer require a PIN to open.",
   "@lockRemovedBody": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "enterPinToView": "Enter PIN to view \"{name}\"",
   "@enterPinToView": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "enterPinToWatch": "Enter PIN to watch \"{name}\"",
   "@enterPinToWatch": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "enterPinToOpen": "Enter PIN to open \"{name}\"",
   "@enterPinToOpen": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
   "disclaimerBody": "This app is a generic player for IPTV subscriptions you already have — it connects to an Xtream Codes panel or loads an M3U playlist that you supply. It does not provide, host, sell, bundle, or index any TV channels, movies, or series, and it ships with no content sources of any kind.\n\nThis app is not affiliated with, and does not endorse, any specific content provider or panel operator.\n\nYou are responsible for the legality of any subscription or playlist you connect this app to.\n\nNo usage data — what you watch, search, download, or connect to — ever leaves your device.",
   "disclaimerFontsNote": "Bundled fonts are licensed under the SIL Open Font License 1.1 — tap Licenses for the full text.",
-
   "indexingCatalog": "Indexing catalog… {stage}",
   "@indexingCatalog": {
-    "placeholders": { "stage": { "type": "String" } }
+    "placeholders": {
+      "stage": {
+        "type": "String"
+      }
+    }
   },
-
   "signIn": "Sign in",
   "addPlaylist": "Add playlist",
   "nameOptional": "Name (optional)",
@@ -141,17 +166,23 @@
   "uncategorized": "Uncategorized",
   "playlistUrl": "Playlist URL",
   "epgUrlOptional": "EPG URL (optional)",
-
   "categoryLocked": "This category is locked",
   "noItemsInCategory": "No items in this category",
-
   "hiddenChannel": "Hidden \"{name}\"",
   "@hiddenChannel": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "resumeChannel": "Resume \"{name}\"",
   "@resumeChannel": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "sortAndHidden": "Sort & hidden channels",
   "sortDefault": "Default order",
@@ -167,15 +198,22 @@
   "noGuideData": "No guide data",
   "nowProgram": "Now: {title}",
   "@nowProgram": {
-    "placeholders": { "title": { "type": "String" } }
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   },
   "nextProgram": "Next: {title}",
   "@nextProgram": {
-    "placeholders": { "title": { "type": "String" } }
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
   },
   "hideChannel": "Hide channel",
   "unhideChannel": "Unhide channel",
-
   "clearHistoryTitle": "Clear watch history?",
   "clearHistoryBody": "This removes the whole watch history log for this playlist. It does not affect favorites or saved resume positions.",
   "clearAction": "Clear",
@@ -183,45 +221,80 @@
   "removeFromHistoryTitle": "Remove from history?",
   "removeHistoryBody": "\"{name}\" will be removed from watch history.",
   "@removeHistoryBody": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "removeSeriesHistoryBody": "\"{name}\" and all its watched episodes will be removed from watch history.",
   "@removeSeriesHistoryBody": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
-
   "searchHint": "Search live TV, movies, series…",
   "stillIndexingSection": "Still indexing this section…",
   "refreshIndexNow": "Refresh index now",
   "itemsIndexed": "{count} items indexed",
   "@itemsIndexed": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "updatedAgo": "Updated {time}",
   "@updatedAgo": {
-    "placeholders": { "time": { "type": "String" } }
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   },
   "syncNever": "never",
   "syncJustNow": "just now",
   "syncMinutesAgo": "{count}m ago",
   "@syncMinutesAgo": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "syncHoursAgo": "{count}h ago",
   "@syncHoursAgo": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "syncDaysAgo": "{count}d ago",
   "@syncDaysAgo": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "tabStillIndexing": "{label} is still indexing — hang on a moment.",
   "@tabStillIndexing": {
-    "placeholders": { "label": { "type": "String" } }
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   },
   "stillIndexingTab": "Still indexing {label} — search will be available once it finishes.",
   "@stillIndexingTab": {
-    "placeholders": { "label": { "type": "String" } }
+    "placeholders": {
+      "label": {
+        "type": "String"
+      }
+    }
   },
   "buildingIndexFirstTime": "Building your search index for the first time…",
   "noIndexYet": "No index yet — tap refresh to build one",
@@ -229,14 +302,16 @@
   "noMatches": "No matches",
   "recentSearches": "RECENT SEARCHES",
   "contentMovie": "Movie",
-
   "removePlaylistTitle": "Remove playlist?",
   "removePlaylistBody": "This removes \"{name}\" and its saved favorites/search index/watch progress/watch history/PIN locks/channel preferences from this device. You can add it again later.",
   "@removePlaylistBody": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "noPlaylistsYet": "No playlists yet — add one below.",
-
   "checkingAccountStatus": "Checking account status…",
   "checkingStatus": "Checking status…",
   "statusUnavailable": "Status unavailable",
@@ -244,22 +319,44 @@
   "connections": "Connections",
   "connectionsInUse": "{active} of {max} in use",
   "@connectionsInUse": {
-    "placeholders": { "active": { "type": "int" }, "max": { "type": "int" } }
+    "placeholders": {
+      "active": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
   },
   "allConnectionsInUse": "All connection slots are in use — another device may be streaming. Close one to start playback here.",
   "noExpiry": "No expiry",
   "expiredOn": "Expired on {date}",
   "@expiredOn": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "expiresLeft": "Expires {left} · {date}",
   "@expiresLeft": {
-    "placeholders": { "left": { "type": "String" }, "date": { "type": "String" } }
+    "placeholders": {
+      "left": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "expiryToday": "today",
   "expiryInDays": "in {count, plural, one {1 day} other {{count} days}}",
   "@expiryInDays": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "statusActive": "Active",
   "statusTrial": "Trial",
@@ -267,10 +364,13 @@
   "statusUnknown": "Unknown",
   "statusDaysLeft": "{count}d left",
   "@statusDaysLeft": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "statusExpiresToday": "expires today",
-
   "genre": "Genre",
   "director": "Director",
   "cast": "Cast",
@@ -278,7 +378,6 @@
   "noSeasonData": "No season data available",
   "noEpisodesInSeason": "No episodes in this season",
   "continueWatching": "Continue watching",
-
   "streamStartFailed": "Couldn't start the stream. The server may be down, or the account's connection limit may already be in use.",
   "streamBlocked": "This channel is protected by the provider and can't be played here. It's likely only viewable on their website.",
   "streamNotFound": "This channel is no longer available.",
@@ -286,7 +385,11 @@
   "continueWatchingTitle": "Continue watching?",
   "resumeBody": "You left off at {time}. Resume from there, or start over?",
   "@resumeBody": {
-    "placeholders": { "time": { "type": "String" } }
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
   },
   "startOver": "Start over",
   "back30": "Back 30s",
@@ -314,14 +417,24 @@
   "noGuideDataChannel": "No guide data for this channel",
   "nowUntil": "Now: {title} (until {time})",
   "@nowUntil": {
-    "placeholders": { "title": { "type": "String" }, "time": { "type": "String" } }
+    "placeholders": {
+      "title": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
   },
   "liveBadge": "LIVE",
-
   "watchChannel": "Watch channel",
   "guideTitle": "Guide — {category}",
   "@guideTitle": {
-    "placeholders": { "category": { "type": "String" } }
+    "placeholders": {
+      "category": {
+        "type": "String"
+      }
+    }
   },
   "earlier": "Earlier",
   "now": "Now",
@@ -329,7 +442,6 @@
   "noChannelsInCategory": "No channels in this category",
   "guideUnavailable": "Couldn't reach the server — guide data is unavailable.",
   "untitled": "(untitled)",
-
   "imageCacheCleared": "Image cache cleared",
   "rebuildIndexTitle": "Rebuild search index?",
   "rebuildIndexBody": "Clears the local search index for this playlist and fetches it again from the server. This can take a minute on a large catalog.",
@@ -341,21 +453,37 @@
   "chooseFolder": "Choose folder…",
   "couldNotWriteFile": "Could not write the file: {error}",
   "@couldNotWriteFile": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "settingsExported": "Settings exported",
   "couldNotReadFile": "Could not read the file: {error}",
   "@couldNotReadFile": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "nothingToImport": "Nothing to import from that file",
   "importedItems": "Imported {items}",
   "@importedItems": {
-    "placeholders": { "items": { "type": "String" } }
+    "placeholders": {
+      "items": {
+        "type": "String"
+      }
+    }
   },
   "playlistCount": "{count, plural, one {1 playlist} other {{count} playlists}}",
   "@playlistCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "appearanceSettings": "appearance settings",
   "importCorrupted": "Couldn't import that file — it may be corrupted.",
@@ -364,13 +492,15 @@
   "clearImageCacheSubtitle": "Posters and channel logos will reload as needed",
   "forPlaylistOnly": "For \"{name}\" only",
   "@forPlaylistOnly": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "exportSubtitle": "Save playlists and appearance to a file (excludes PIN)",
   "importSubtitle": "Load playlists and appearance from an exported file",
-
   "tooManyRequests": "Too many requests right now — the background catalog index is still syncing and is using up the server's request limit. This should clear up once indexing finishes; tap retry in a moment.",
-
   "profilesTitle": "Profiles",
   "whoIsUsing": "Who's using this?",
   "addProfile": "Add profile",
@@ -383,7 +513,11 @@
   "deleteProfileTitle": "Delete profile",
   "deleteProfileBody": "Delete \"{name}\"? This permanently removes its playlists and all of its data — favorites, watch history, and settings. Other profiles are unaffected.",
   "@deleteProfileBody": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "switchProfile": "Switch profile",
   "kidsProfile": "Kids profile",
@@ -403,21 +537,27 @@
   "kidsSiblingPinAllSet": "Your other profiles are all protected with a PIN.",
   "kidsSiblingPinSetOn": "Set a PIN on \"{name}\"",
   "@kidsSiblingPinSetOn": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "kidsSiblingPinDone": "Done",
   "requireProfilePin": "Require a PIN to open this profile",
   "changePin": "Change PIN",
   "profilePinEntry": "Enter the PIN for {name}",
   "@profilePinEntry": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "parentPinTitle": "Enter a parent's PIN",
-
   "navRecent": "New",
   "recentlyAddedTitle": "Recently Added",
   "noRecentlyAdded": "Nothing recently added yet",
-
   "navHome": "Home",
   "viewAll": "View all",
   "greetingMorning": "Good morning",
@@ -425,23 +565,28 @@
   "greetingEvening": "Good evening",
   "channelsCount": "{count, plural, one {1 channel} other {{count} channels}}",
   "@channelsCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "accountExpires": "List expires: {date}",
   "@accountExpires": {
-    "placeholders": { "date": { "type": "String" } }
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
   },
   "quickCardLiveTv": "Live channels & EPG",
   "quickCardMovies": "Browse the library",
   "quickCardSeries": "Shows & full seasons",
   "homeEmptyTitle": "Make yourself at home",
   "homeEmptyBody": "Rails appear here as you watch, favorite, and save things. Start with the cards above.",
-
   "sortAndFilter": "Sort & filter",
   "sortBy": "Sort by",
   "sortProviderDefault": "Default",
-  "sortNameAsc": "Name (A–Z)",
-  "sortNameDesc": "Name (Z–A)",
   "sortRatingHigh": "Rating (high to low)",
   "sortRecentlyAdded": "Recently added",
   "sortRecentlyWatched": "Recently watched",
@@ -449,34 +594,43 @@
   "ratingAny": "Any",
   "ratingAtLeast": "{rating}+",
   "@ratingAtLeast": {
-    "placeholders": { "rating": { "type": "String" } }
+    "placeholders": {
+      "rating": {
+        "type": "String"
+      }
+    }
   },
-
   "enhancedSearchTitle": "Enhanced search (cast & director)",
   "enhancedSearchSubtitle": "Also match titles by actor, director, or genre",
   "enhancedSearchExplainer": "When on, the app downloads extra details for every movie and series in the background, a little at a time, so Search and the browse filters can match cast, director, and genre — not just titles. Because it makes one request per title, it can take a while on large libraries, and some providers may briefly rate-limit or refuse connections while it runs. It uses more storage, only ever reads your own subscription, and sends nothing off your device. It pauses whenever this is off.",
   "enhancedSearchProgress": "Enhanced {done} of {total}",
   "@enhancedSearchProgress": {
     "placeholders": {
-      "done": { "type": "int" },
-      "total": { "type": "int" }
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
   "enhancedSearchComplete": "All titles enhanced",
   "enhancedSearchBuilding": "Building…",
   "enhancedSearchNeedsIndex": "Waiting for the catalog to finish indexing first",
   "enhancedSearchRebuildStarted": "Rebuilding enhanced search",
-
   "navWatchlist": "Watchlist",
   "watchlistTitle": "Watchlist",
   "addToWatchlist": "Add to Watchlist",
   "removeFromWatchlist": "Remove from Watchlist",
   "removedFromWatchlist": "Removed \"{name}\" from Watchlist",
   "@removedFromWatchlist": {
-    "placeholders": { "name": { "type": "String" } }
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
   },
   "noWatchlistItems": "Nothing in your watchlist yet",
-
   "navBrowse": "Browse",
   "browseTitle": "Browse by genre",
   "browseNeedsIndexTitle": "Browse by genre needs Enhanced search",
@@ -488,11 +642,14 @@
   "browseOpenSettings": "Open Settings",
   "genreTitleCount": "{count, plural, =1{1 title} other{{count} titles}}",
   "@genreTitleCount": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "filterByYear": "Filter by year",
   "yearAny": "Any year",
-
   "keyboardShortcutsTitle": "Keyboard shortcuts",
   "shortcutPlayPause": "Play / pause",
   "shortcutSeek": "Seek back / forward 10s",
@@ -500,7 +657,6 @@
   "shortcutSpeed": "Playback speed down / up",
   "shortcutChannel": "Channel up / down",
   "shortcutHelp": "Show this help",
-
   "diagnosticsTitle": "Diagnostics",
   "diagnosticsSubtitle": "Connectivity test, session log, cache",
   "diagnosticsSystemInfo": "System info",
@@ -510,9 +666,15 @@
   "diagnosticsCatalogSummary": "{live} live · {movies} movies · {series} series",
   "@diagnosticsCatalogSummary": {
     "placeholders": {
-      "live": { "type": "int" },
-      "movies": { "type": "int" },
-      "series": { "type": "int" }
+      "live": {
+        "type": "int"
+      },
+      "movies": {
+        "type": "int"
+      },
+      "series": {
+        "type": "int"
+      }
     }
   },
   "diagnosticsLastSync": "Last sync",
@@ -521,11 +683,19 @@
   "diagnosticsTesting": "Testing…",
   "diagnosticsReachable": "Reachable — {ms} ms",
   "@diagnosticsReachable": {
-    "placeholders": { "ms": { "type": "int" } }
+    "placeholders": {
+      "ms": {
+        "type": "int"
+      }
+    }
   },
   "diagnosticsFailed": "Failed: {error}",
   "@diagnosticsFailed": {
-    "placeholders": { "error": { "type": "String" } }
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
   },
   "diagnosticsSessionLog": "Session log",
   "diagnosticsLogEmpty": "No events logged this session",
@@ -533,7 +703,6 @@
   "diagnosticsClearLog": "Clear",
   "diagnosticsLogCopied": "Log copied to clipboard",
   "diagnosticsMaintenance": "Maintenance",
-
   "settingsPlayback": "Playback",
   "externalPlayerTitle": "Use external player",
   "externalPlayerSubtitle": "Open streams in VLC instead of the built-in player",
@@ -545,7 +714,6 @@
   "externalPlayerHandoff": "Playing in your external player",
   "externalPlayerLaunchFailed": "Couldn't open the external player. Check its path in Settings.",
   "externalPlayerPlayAgain": "Play again",
-
   "download": "Download",
   "downloading": "Downloading",
   "downloadQueued": "Queued",
@@ -559,7 +727,11 @@
   "noDownloads": "No downloads yet",
   "storageUsed": "{size} used",
   "@storageUsed": {
-    "placeholders": { "size": { "type": "String" } }
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
   },
   "deleteAllDownloads": "Delete all",
   "deleteAllDownloadsConfirm": "Delete all downloads?",
@@ -570,9 +742,12 @@
   "speedUnlimited": "Unlimited",
   "speedMbps": "{value} MB/s",
   "@speedMbps": {
-    "placeholders": { "value": { "type": "String" } }
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
   },
-
   "errInvalidCredentials": "Invalid username or password.",
   "errNotXtreamPanel": "Unexpected response from the server. Check that the server URL points to an Xtream panel.",
   "errBadResponse": "The server sent an unexpected response. Please try again later.",
@@ -583,14 +758,11 @@
   "errRateLimited": "The server is rate-limiting requests (429). Please try again later.",
   "errUnavailable": "The server is temporarily unavailable (503). Please try again later.",
   "errNoChannelsInPlaylist": "No channels found in this playlist.",
-
   "customizeHome": "Customize Home",
   "addCategoryRail": "Add category rail",
-
   "watchFromStart": "Watch from start",
   "audioOnlyStream": "Audio-only stream",
   "playlistUrlOrFile": "Playlist URL or file",
-
   "settingsCloseToTray": "Keep running in the tray",
   "settingsCloseToTraySubtitle": "Closing the window hides the app to the system tray — playback and downloads keep running",
   "trayShowWindow": "Show window",
