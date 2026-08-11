@@ -16,6 +16,7 @@ import '../common/api_error_helper.dart';
 import '../common/browse_states.dart';
 import '../common/cached_poster_image.dart';
 import '../common/expandable_text.dart';
+import '../common/tile_highlight.dart';
 import '../common/poster_backdrop.dart';
 import '../downloads/download_button.dart';
 import '../player/channel_player_screen.dart';
@@ -111,8 +112,8 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     // frame so setState() is always safe to call here.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _info == null) return;
-      final lastWatched = PlaybackService.instance
-          .lastEpisodeForSeries(widget.series.seriesId);
+      final lastWatched =
+          PlaybackService.instance.lastEpisodeForSeries(widget.series.seriesId);
       final id = lastWatched?.id;
       if (id == _resumeEpisodeId) return;
       setState(() {
@@ -144,7 +145,8 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() {
-        _error = describeApiError(e, widget.account, AppLocalizations.of(context)!);
+        _error =
+            describeApiError(e, widget.account, AppLocalizations.of(context)!);
         _loading = false;
       });
     }
@@ -185,9 +187,8 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
           streamUrl: url,
           // M3U streams get the default browser UA (403-avoidance, like
           // live); pointless for a local file.
-          httpHeaders: downloaded
-              ? null
-              : iptvVodHeaders(isM3u: widget.account.isM3u),
+          httpHeaders:
+              downloaded ? null : iptvVodHeaders(isM3u: widget.account.isM3u),
           // The series snapshot: star toggle in the player, and the cover
           // image on the watch-history entry it records (episodes log under
           // their series, so without this history tiles had no poster).
@@ -318,7 +319,8 @@ class _SeriesHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(series.name, style: Theme.of(context).textTheme.titleLarge),
+                Text(series.name,
+                    style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 6),
                 if (info?.ageRating != null || info?.rating != null)
                   Padding(
@@ -330,22 +332,27 @@ class _SeriesHeader extends StatelessWidget {
                           Chip(
                             label: Text(info!.ageRating!),
                             visualDensity: VisualDensity.compact,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                           ),
                         if (info?.rating != null)
                           Chip(
-                            avatar: const Icon(Icons.star, size: 16, color: Colors.amber),
+                            avatar: const Icon(Icons.star,
+                                size: 16, color: Colors.amber),
                             label: Text(info!.rating!),
                             visualDensity: VisualDensity.compact,
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                           ),
                       ],
                     ),
                   ),
-                if (info?.genre != null) _InfoRow(label: l.genre, value: info!.genre!),
+                if (info?.genre != null)
+                  _InfoRow(label: l.genre, value: info!.genre!),
                 if (info?.director != null)
                   _InfoRow(label: l.director, value: info!.director!),
-                if (info?.cast != null) _InfoRow(label: l.cast, value: info!.cast!),
+                if (info?.cast != null)
+                  _InfoRow(label: l.cast, value: info!.cast!),
                 if (info?.plot != null) ...[
                   const SizedBox(height: 6),
                   ExpandableText(text: info!.plot!, collapsedLines: 4),
@@ -375,7 +382,9 @@ class _InfoRow extends StatelessWidget {
         text: TextSpan(
           style: DefaultTextStyle.of(context).style,
           children: [
-            TextSpan(text: '$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+            TextSpan(
+                text: '$label: ',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
             TextSpan(text: value),
           ],
         ),
@@ -476,29 +485,31 @@ class _EpisodeListState extends State<_EpisodeList> {
       itemBuilder: (context, index) {
         final episode = widget.episodes[index];
         final isHighlighted = episode.id == widget.highlightEpisodeId;
-        return ListTile(
-          key: isHighlighted ? _highlightKey : null,
-          tileColor: isHighlighted
-              ? Theme.of(context).colorScheme.primaryContainer
-              : null,
-          leading: CircleAvatar(child: Text('${episode.episodeNum}')),
-          title: Text(
-            episode.title,
-            style: isHighlighted ? const TextStyle(fontWeight: FontWeight.bold) : null,
+        return TileHighlight(
+          highlighted: isHighlighted,
+          color: Theme.of(context).colorScheme.primaryContainer,
+          child: ListTile(
+            key: isHighlighted ? _highlightKey : null,
+            leading: CircleAvatar(child: Text('${episode.episodeNum}')),
+            title: Text(
+              episode.title,
+              style: isHighlighted
+                  ? const TextStyle(fontWeight: FontWeight.bold)
+                  : null,
+            ),
+            subtitle: isHighlighted ? Text(l.continueWatching) : null,
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DownloadButton(
+                    item: widget.downloadItemFor(episode), compact: true),
+                const Icon(Icons.play_arrow),
+              ],
+            ),
+            onTap: () => widget.onTap(episode),
           ),
-          subtitle: isHighlighted ? Text(l.continueWatching) : null,
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DownloadButton(
-                  item: widget.downloadItemFor(episode), compact: true),
-              const Icon(Icons.play_arrow),
-            ],
-          ),
-          onTap: () => widget.onTap(episode),
         );
       },
     );
   }
 }
-

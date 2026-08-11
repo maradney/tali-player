@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/category.dart';
 import '../../l10n/app_localizations.dart';
 import 'category_label.dart';
+import 'tile_highlight.dart';
 
 /// Fixed-width left-hand list of categories - shared by Live TV, Movies,
 /// and Series, since all three follow the same categories-first pattern.
@@ -37,22 +38,26 @@ class CategoryRail extends StatelessWidget {
           final category = categories[index];
           final isSelected = category.categoryId == selected?.categoryId;
           final locked = isLocked?.call(category) ?? false;
-          return ListTile(
-            selected: isSelected,
-            selectedTileColor:
+          return TileHighlight(
+            highlighted: isSelected,
+            color:
                 Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-            title: Text(
-              categoryDisplayName(category, AppLocalizations.of(context)!),
-              style: TextStyle(
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            child: ListTile(
+              selected: isSelected,
+              title: Text(
+                categoryDisplayName(category, AppLocalizations.of(context)!),
+                style: TextStyle(
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
+              trailing: locked
+                  ? Icon(Icons.lock,
+                      size: 18, color: Theme.of(context).disabledColor)
+                  : null,
+              onTap: () => onSelect(category),
+              onLongPress:
+                  onLongPress == null ? null : () => onLongPress!(category),
             ),
-            trailing: locked
-                ? Icon(Icons.lock, size: 18, color: Theme.of(context).disabledColor)
-                : null,
-            onTap: () => onSelect(category),
-            onLongPress:
-                onLongPress == null ? null : () => onLongPress!(category),
           );
         },
       ),
