@@ -7,6 +7,7 @@ import '../models/catalog_row.dart';
 import '../models/category.dart';
 import '../models/search_result.dart';
 import '../sources/m3u_media_source.dart';
+import 'diagnostics_log.dart';
 
 /// How many of a single content type's categories are fetched at once.
 /// Deliberately 1: all three content types sync concurrently, so at
@@ -21,6 +22,25 @@ const _categoryConcurrency = 1;
 /// so it sips at the panel's request budget rather than gulping, again to
 /// leave room for the user's own navigation.
 const _interChunkDelay = Duration(milliseconds: 800);
+
+/// Staggers the three content types' opening request. They sync concurrently,
+/// so without this all three ask for their category list in the same instant -
+/// the burstiest moment of the whole sync, right at launch, when the user's
+/// own screens are also loading. A panel that rate-limits refuses whichever
+/// ones it likes least, which is how Live and Movies ended up permanently
+/// unindexed while Series was fine.
+const _typeStartStagger = Duration(milliseconds: 700);
+
+/// Extra attempts at a type's category list, on top of the API's own retries.
+/// The list is a single request that the entire type depends on: lose it and
+/// there is nothing to iterate, so it is worth more patience than the
+/// per-category fetches get.
+const _categoryListAttempts = 3;
+
+/// Backoff between those attempts. Deliberately long - the failure being
+/// recovered from is usually a rate limit, which needs time rather than
+/// persistence.
+const _categoryListBackoff = [Duration(seconds: 3), Duration(seconds: 8)];
 
 /// Keeps the local search index (SQLite) up to date. Meant to run in the
 /// background: login kicks this off without awaiting it, so indexing
@@ -84,6 +104,7 @@ class CatalogSyncService extends ChangeNotifier {
   /// a previous run. Call once when a screen that needs this state
   /// (Search) first appears - without this, tabs would look "not indexed
   /// yet" every app restart even though the data is already there.
+  ///
   /// Two callers overlap on startup - HomeShell via [syncIfNeeded], and Search
   /// from its own initState - so they share one in-flight pass rather than the
   /// second one short-circuiting on a half-done first.
@@ -170,6 +191,9 @@ class CatalogSyncService extends ChangeNotifier {
           account,
           api,
           type: ContentType.live,
+          // Live goes first with no delay; the other two are staggered so the
+          // three category-list requests do not land together.
+          startDelay: Duration.zero,
           getCategories: (a) => api.getLiveCategories(a,
               maxRetries: XtreamApiService.backgroundMaxRetries),
           getItemsForCategory: (a, catId) async {
@@ -192,6 +216,7 @@ class CatalogSyncService extends ChangeNotifier {
           account,
           api,
           type: ContentType.movie,
+          startDelay: _typeStartStagger,
           getCategories: (a) => api.getVodCategories(a,
               maxRetries: XtreamApiService.backgroundMaxRetries),
           getItemsForCategory: (a, catId) async {
@@ -219,6 +244,7 @@ class CatalogSyncService extends ChangeNotifier {
           account,
           api,
           type: ContentType.series,
+          startDelay: _typeStartStagger * 2,
           getCategories: (a) => api.getSeriesCategories(a,
               maxRetries: XtreamApiService.backgroundMaxRetries),
           getItemsForCategory: (a, catId) async {
@@ -267,6 +293,33 @@ class CatalogSyncService extends ChangeNotifier {
   /// Persists straight to disk and marks the type as indexed as soon as
   /// it finishes, rather than waiting for all three types - so e.g. Live
   /// becomes searchable while Movies/Series are still syncing.
+  /// The category list with its own retries, or null if every attempt failed.
+  ///
+  /// The API already retries internally, but those retries all happen inside
+  /// the same burst; a rate limit needs waiting out, not retrying harder. This
+  /// adds a few widely-spaced attempts on top, which is affordable because it
+  /// is one request per type and the whole type is useless without it.
+  Future<List<Category>?> _fetchCategoriesWithRetry(
+    Account account, {
+    required ContentType type,
+    required Future<List<Category>> Function(Account) getCategories,
+  }) async {
+    for (var attempt = 0; attempt < _categoryListAttempts; attempt++) {
+      try {
+        return await getCategories(account);
+      } catch (_) {
+        if (attempt < _categoryListBackoff.length) {
+          DiagnosticsLog.instance.add(
+            'Sync: ${type.name} category list failed, retrying in '
+            '${_categoryListBackoff[attempt].inSeconds}s',
+          );
+          await Future.delayed(_categoryListBackoff[attempt]);
+        }
+      }
+    }
+    return null;
+  }
+
   Future<void> _syncType(
     Account account,
     XtreamApiService api, {
@@ -275,15 +328,28 @@ class CatalogSyncService extends ChangeNotifier {
     required Future<List<CatalogRow>> Function(Account, String categoryId)
         getItemsForCategory,
     int concurrency = _categoryConcurrency,
+    Duration startDelay = Duration.zero,
   }) async {
+    if (startDelay > Duration.zero) await Future.delayed(startDelay);
     _activeStages.add(type);
     notifyListeners();
 
     try {
-      List<Category> categories;
-      try {
-        categories = await getCategories(account);
-      } catch (_) {
+      final categories = await _fetchCategoriesWithRetry(
+        account,
+        type: type,
+        getCategories: getCategories,
+      );
+      if (categories == null) {
+        // Every attempt failed. Leaving the type unsynced is deliberate: it is
+        // what makes the next launch try again. Marking it, or wiping what is
+        // already stored, would turn a transient refusal into a permanent
+        // empty section - which is exactly how Live and Movies ended up stuck
+        // at "0 items indexed / Updated never" across restarts.
+        DiagnosticsLog.instance.add(
+          'Sync: ${type.name} category list failed after $_categoryListAttempts '
+          'attempts — keeping the previous index',
+        );
         return;
       }
 
@@ -291,6 +357,7 @@ class CatalogSyncService extends ChangeNotifier {
       notifyListeners();
 
       final results = <CatalogRow>[];
+      var failedCategories = 0;
 
       for (var i = 0; i < categories.length; i += concurrency) {
         final chunk = categories.skip(i).take(concurrency);
@@ -299,12 +366,15 @@ class CatalogSyncService extends ChangeNotifier {
             try {
               return await getItemsForCategory(account, cat.categoryId);
             } catch (_) {
-              return <CatalogRow>[];
+              // Counted, not swallowed - a partial catalog must not be allowed
+              // to overwrite a complete one.
+              failedCategories++;
+              return null;
             }
           }),
         );
         for (final list in chunkResults) {
-          results.addAll(list);
+          if (list != null) results.addAll(list);
         }
         _completedCategories += chunkResults.length;
         notifyListeners();
@@ -314,6 +384,17 @@ class CatalogSyncService extends ChangeNotifier {
         if (i + concurrency < categories.length) {
           await Future.delayed(_interChunkDelay);
         }
+      }
+
+      if (failedCategories > 0) {
+        // replaceTypeItems deletes before it inserts, so writing a partial
+        // result here would destroy rows the panel simply failed to re-serve.
+        // Keep what we have and let the next sync try for a clean sweep.
+        DiagnosticsLog.instance.add(
+          'Sync: ${type.name} incomplete — $failedCategories of '
+          '${categories.length} categories failed, previous index kept',
+        );
+        return;
       }
 
       final key = CatalogRow.accountKeyFor(account);
