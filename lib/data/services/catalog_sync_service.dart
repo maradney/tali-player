@@ -44,6 +44,10 @@ class CatalogSyncService extends ChangeNotifier {
   final Map<String, Set<ContentType>> _indexedTypes = {};
   final Set<String> _hydrated = {};
 
+  /// Hydration currently in flight, so concurrent callers share one pass
+  /// rather than the second one short-circuiting on a half-done first.
+  final Map<String, Future<void>> _hydrating = {};
+
   bool _isSyncing = false;
   int _completedCategories = 0;
   int _totalCategories = 0;
@@ -80,18 +84,36 @@ class CatalogSyncService extends ChangeNotifier {
   /// a previous run. Call once when a screen that needs this state
   /// (Search) first appears - without this, tabs would look "not indexed
   /// yet" every app restart even though the data is already there.
-  Future<void> hydrateIndexedTypes(Account account) async {
+  /// Two callers overlap on startup - HomeShell via [syncIfNeeded], and Search
+  /// from its own initState - so they share one in-flight pass rather than the
+  /// second one short-circuiting on a half-done first.
+  ///
+  /// The change that matters is *when* the key is marked done. It used to be
+  /// claimed before awaiting the database, so a read that threw part-way left
+  /// the account permanently marked-but-empty: every Search tab would report
+  /// "still indexing" for the rest of the session, with nothing able to retry,
+  /// while the counters underneath - read from the database rather than from
+  /// this set - reported a catalog that was plainly there. The key is now set
+  /// only on success, and the in-flight entry cleared either way.
+  Future<void> hydrateIndexedTypes(Account account) {
     final key = CatalogRow.accountKeyFor(account);
-    if (_hydrated.contains(key)) return;
-    _hydrated.add(key);
+    if (_hydrated.contains(key)) return Future<void>.value();
+    return _hydrating[key] ??= _hydrate(key);
+  }
 
-    final indexed = <ContentType>{};
-    for (final type in ContentType.values) {
-      final syncedAt = await CatalogDatabase.instance.typeSyncedAt(key, type);
-      if (syncedAt != null) indexed.add(type);
+  Future<void> _hydrate(String key) async {
+    try {
+      final indexed = <ContentType>{};
+      for (final type in ContentType.values) {
+        final syncedAt = await CatalogDatabase.instance.typeSyncedAt(key, type);
+        if (syncedAt != null) indexed.add(type);
+      }
+      _indexedTypes[key] = indexed;
+      _hydrated.add(key);
+      notifyListeners();
+    } finally {
+      _hydrating.remove(key);
     }
-    _indexedTypes[key] = indexed;
-    notifyListeners();
   }
 
   /// Syncs only if there's no record of a sync, or the last one is older

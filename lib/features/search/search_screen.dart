@@ -232,20 +232,23 @@ class _SearchScreenState extends State<SearchScreen>
     }
   }
 
-  void _onTabTap(int index) {
-    if (_tabReady(index)) return;
-    // The tap already moved the controller to `index` by the time this
-    // fires - snap back and let the person know why.
-    _tabController.index = _tabController.previousIndex;
-    final l = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).clearSnackBars();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(l.tabStillIndexing(_tabLabel(index, l))),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
+// A tab that isn't indexed yet stays selectable on purpose.
+//
+// It used to be refused: onTap assigned _tabController.index =
+// previousIndex, which fights the TabBar's own animation toward the tapped
+// tab. That left three disagreeing ideas of "the current tab" on screen at
+// once - the indicator underlined one, the highlighted label sat on another,
+// and the body text named a third - because the indicator follows the
+// controller's animation, the snackbar named the tapped index, and the body
+// named whatever the controller finally settled on. Worse, after one refused
+// tap `previousIndex` *is* the refused tab, so the next refusal snapped onto
+// it rather than away from it.
+//
+// Letting the selection through removes the whole class of disagreement:
+// there is one source of truth, the tab you picked. The label is already
+// greyed out, the field stays disabled, and the body says which section is
+// still indexing - which is more informative than a snackbar naming a tab
+// you are no longer on.
 
   String _tabLabel(int index, AppLocalizations l) {
     switch (index) {
@@ -487,7 +490,6 @@ class _SearchScreenState extends State<SearchScreen>
         title: Text(l.searchTitle),
         bottom: TabBar(
           controller: _tabController,
-          onTap: _onTabTap,
           tabs: [
             for (var i = 0; i < 4; i++)
               Tab(
