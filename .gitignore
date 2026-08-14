@@ -1,6 +1,34 @@
-# Private planning notes — never published
+# Planning and working notes — never published.
+#
+# The Markdown this project publishes is a closed set: README.md, CHANGELOG.md,
+# POLICY.md, tool/ANDROID_SIGNING.md and assets/fonts/FONT-LICENSES.md.
+# Everything else written in Markdown here is working material — roadmaps,
+# design plans, scratch notes — and none of it is meant for a stranger reading
+# the repo. These patterns catch the usual names so a new one cannot be swept
+# up by `git add -A`.
+#
+# Note this guards *new* files only: ignoring a path does nothing once the file
+# is tracked. To stop publishing something already committed, use
+# `git rm --cached <path>` as well.
 ROADMAP.md
-docs/m3u-plan.md
+/docs/
+TODO.md
+NOTES.md
+PLAN.md
+PLANNING.md
+DESIGN.md
+SCRATCH.md
+*-plan.md
+*-notes.md
+*-draft.md
+*.local.md
+
+# Claude Code's working directory: local settings and scratch worktrees, one of
+# which holds a checkout of the pre-scrub history including ROADMAP.md.
+# .git/info/exclude covers the worktrees today, but that file is local-only and
+# never leaves this machine, so the rule belongs here too. If a shared
+# .claude/settings.json is ever wanted, `git add -f` it deliberately.
+.claude/
 
 # Local developer scratch — useful on disk, not worth publishing
 compile_project.sh
