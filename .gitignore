@@ -2,6 +2,17 @@
 ROADMAP.md
 docs/m3u-plan.md
 
+# Local developer scratch — useful on disk, not worth publishing
+compile_project.sh
+project_progress.txt
+
+# Playlists and subscription data. These carry a provider's URL and often
+# embedded credentials; the app ships with no content sources of any kind and
+# none must ever arrive by way of a commit.
+*.m3u
+*.m3u8
+*.xmltv
+
 # Miscellaneous
 *.class
 *.log

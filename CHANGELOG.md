@@ -4,6 +4,43 @@ All notable changes to this project are documented here. The format loosely
 follows [Keep a Changelog](https://keepachangelog.com/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+- **Android support.** The app builds, runs, and exports correctly on Android
+  7.0 (API 24) and newer, with per-ABI release APKs and a documented signing
+  setup (see `tool/ANDROID_SIGNING.md`)
+- Phone-shaped layouts across the shell and every content screen, not just the
+  navigation chrome
+- Player behaviour suited to a handset: screen kept awake, immersive
+  fullscreen, auto-rotate to landscape on fullscreen, back gesture unwinds one
+  layer at a time
+- App data stays on the device — cloud backup and device-to-device transfer are
+  disabled, so credentials never leave the phone
+
+### Changed
+- **The app is now called Tali** (تالي) everywhere it is user-visible, with its
+  own icon and a permanent application ID of `io.github.maradney.tali`
+- The export button is named after whatever actually opens on the current
+  platform
+- A TLS handshake failure is explained in words instead of printing OpenSSL's
+  raw error code
+
+### Fixed
+- Catalogue sections are only replaced when their fetch fully succeeded. A
+  partly-failed sync used to wipe a working index and stamp the emptiness as
+  current, stranding Live and Movies at "0 items / Updated never"
+- The Search tab bar could show three different answers at once to "which tab
+  am I on" — indicator, label, and body each followed a different source
+- The selected episode's highlight no longer smears over the series
+  description while scrolling
+- Posters cached in an unusable state are re-fetched instead of staying broken
+- The resume point is protected from being reset to zero when a video fails to
+  load; skip presses are batched into one seek instead of stacking buffers
+- Long descriptions and cut-off titles are now reachable
+- The app-bar scroll tint no longer leaks between tabs
+- Sign-in form and player controls no longer overflow on a phone in landscape
+
 ## 0.1.0 — first public release
 
 A Windows desktop IPTV client for subscriptions you already have. Highlights:
@@ -42,5 +79,3 @@ A Windows desktop IPTV client for subscriptions you already have. Highlights:
 - Light/dark/system theme, accent presets, grid density, font choice
 - Settings backup export/import (per profile)
 - Diagnostics screen; no telemetry of any kind
-
-[Unreleased]: https://github.com/Maradney/iptv_player/compare/v0.1.0...HEAD

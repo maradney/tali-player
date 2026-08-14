@@ -28,9 +28,9 @@ here. `keytool` ships with the JDK bundled in Android Studio:
 
 ```
 "C:\Program Files\Android\Android Studio\jbr\bin\keytool" -genkey -v ^
-  -keystore %USERPROFILE%\iptv-player-release.jks ^
+  -keystore %USERPROFILE%\tali-release.jks ^
   -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 ^
-  -alias iptv-player
+  -alias tali
 ```
 
 `-validity 10000` (about 27 years) is the usual choice: Play requires the key to
@@ -39,9 +39,9 @@ outlast the app, and there is no way to rotate it afterwards.
 Then create `android/key.properties`, which the Gradle build reads:
 
 ```
-storeFile=C:\\Users\\<you>\\iptv-player-release.jks
+storeFile=C:\\Users\\<you>\\tali-release.jks
 storePassword=<the store password you chose>
-keyAlias=iptv-player
+keyAlias=tali
 keyPassword=<the key password you chose>
 ```
 
