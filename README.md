@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="design/tali-logo.png" alt="Tali" width="132" height="132">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="design/tali-logo-inverted.png">
+    <img src="design/tali-logo.png" alt="Tali" width="132" height="132">
+  </picture>
 </p>
 
 <h1 align="center">Tali</h1>
