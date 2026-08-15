@@ -357,6 +357,9 @@ class CatalogSyncService extends ChangeNotifier {
       notifyListeners();
 
       final results = <CatalogRow>[];
+      // Which categories actually came back, so a partial result can be written
+      // without touching the rows of the ones that did not.
+      final fetched = <String>{};
       var failedCategories = 0;
 
       for (var i = 0; i < categories.length; i += concurrency) {
@@ -364,10 +367,12 @@ class CatalogSyncService extends ChangeNotifier {
         final chunkResults = await Future.wait(
           chunk.map((cat) async {
             try {
-              return await getItemsForCategory(account, cat.categoryId);
+              final rows = await getItemsForCategory(account, cat.categoryId);
+              fetched.add(cat.categoryId);
+              return rows;
             } catch (_) {
-              // Counted, not swallowed - a partial catalog must not be allowed
-              // to overwrite a complete one.
+              // Counted, not swallowed: which categories failed decides what
+              // may be overwritten below.
               failedCategories++;
               return null;
             }
@@ -386,18 +391,39 @@ class CatalogSyncService extends ChangeNotifier {
         }
       }
 
+      final key = CatalogRow.accountKeyFor(account);
+
       if (failedCategories > 0) {
-        // replaceTypeItems deletes before it inserts, so writing a partial
-        // result here would destroy rows the panel simply failed to re-serve.
-        // Keep what we have and let the next sync try for a clean sweep.
+        // A partial result must not delete the rows of categories the panel
+        // merely failed to re-serve - but it must not be thrown away either.
+        // An earlier version of this returned here, and on a real sync that
+        // discarded the 38 categories of 44 that had succeeded. Write the ones
+        // that came back and leave the rest alone.
+        if (fetched.isEmpty) {
+          DiagnosticsLog.instance.add(
+            'Sync: ${type.name} failed — all ${categories.length} categories '
+            'unavailable, nothing written',
+          );
+          return;
+        }
+        await CatalogDatabase.instance
+            .replaceCategoryItems(key, type, fetched, results);
+        // Marked usable even though incomplete: these are two different
+        // questions, and conflating them is what left search disabled while
+        // most of the catalog sat in the database. The type is still due a
+        // refresh, which the ordinary interval takes care of, and because the
+        // write is per-category the coverage accumulates run over run.
+        await CatalogDatabase.instance
+            .setTypeSyncedAt(key, type, DateTime.now());
+        _indexedTypes.putIfAbsent(key, () => {}).add(type);
         DiagnosticsLog.instance.add(
-          'Sync: ${type.name} incomplete — $failedCategories of '
-          '${categories.length} categories failed, previous index kept',
+          'Sync: ${type.name} partial — wrote ${fetched.length} of '
+          '${categories.length} categories (${results.length} items), '
+          '$failedCategories failed and were left as they were',
         );
         return;
       }
 
-      final key = CatalogRow.accountKeyFor(account);
       await CatalogDatabase.instance.replaceTypeItems(key, type, results);
       await CatalogDatabase.instance.setTypeSyncedAt(key, type, DateTime.now());
       _indexedTypes.putIfAbsent(key, () => {}).add(type);

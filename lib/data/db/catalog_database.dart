@@ -377,6 +377,100 @@ class CatalogDatabase {
     });
   }
 
+  /// Replaces the rows of just the categories listed in [categoryIds], leaving
+  /// every other category of this type exactly as it was.
+  ///
+  /// [replaceTypeItems] is all-or-nothing across a whole content type, which
+  /// forces an impossible choice when a sync only partly succeeds: write, and
+  /// delete the rows of categories the panel merely failed to re-serve; or skip
+  /// the write, and throw away everything that did arrive. A real sync failed 6
+  /// of 44 categories and the second choice discarded the other 38.
+  ///
+  /// Scoping the delete to the categories actually fetched avoids both. It also
+  /// means coverage accumulates: if a different handful fails each run, the
+  /// union of what is stored grows instead of restarting.
+  ///
+  /// Note this cannot prune a category the panel has *dropped* — it is not in
+  /// [categoryIds], so its rows stay. A later clean sweep through
+  /// [replaceTypeItems] does that.
+  Future<void> replaceCategoryItems(
+    String accountKey,
+    ContentType type,
+    Set<String> categoryIds,
+    List<CatalogRow> rows,
+  ) async {
+    if (categoryIds.isEmpty) return;
+    final db = await _database;
+    await db.transaction((txn) async {
+      // Same enrichment-preserving dance as replaceTypeItems: snapshot the
+      // expensive cast/director/genre columns before the delete and re-apply
+      // them to the rows that come back. Snapshotting the whole type rather
+      // than just these categories costs one wider read and keeps the two
+      // methods honest about doing the same thing.
+      final existing = await txn.query(
+        'catalog_items',
+        columns: [
+          'id',
+          'cast_names',
+          'director',
+          'genre',
+          'year',
+          'detail_rating',
+          'enriched_at',
+        ],
+        where: 'account_key = ? AND type = ? AND enriched_at IS NOT NULL',
+        whereArgs: [accountKey, type.name],
+      );
+      final enrichment = {for (final r in existing) r['id'] as String: r};
+
+      // Chunked: SQLite caps the number of bound variables per statement, and
+      // a panel is free to have more categories than that cap.
+      const idsPerStatement = 400;
+      final ids = categoryIds.toList();
+      for (var i = 0; i < ids.length; i += idsPerStatement) {
+        final part = ids.skip(i).take(idsPerStatement).toList();
+        final placeholders = List.filled(part.length, '?').join(',');
+        await txn.delete(
+          'catalog_items',
+          where: 'account_key = ? AND type = ? '
+              'AND category_id IN ($placeholders)',
+          whereArgs: [accountKey, type.name, ...part],
+        );
+      }
+
+      final batch = txn.batch();
+      for (final row in rows) {
+        batch.insert(
+          'catalog_items',
+          row.toDbMap(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await batch.commit(noResult: true);
+
+      if (enrichment.isEmpty) return;
+      final restore = txn.batch();
+      for (final row in rows) {
+        final e = enrichment[row.id];
+        if (e == null) continue;
+        restore.update(
+          'catalog_items',
+          {
+            'cast_names': e['cast_names'],
+            'director': e['director'],
+            'genre': e['genre'],
+            'year': e['year'],
+            'detail_rating': e['detail_rating'],
+            'enriched_at': e['enriched_at'],
+          },
+          where: 'account_key = ? AND type = ? AND id = ?',
+          whereArgs: [accountKey, type.name, row.id],
+        );
+      }
+      await restore.commit(noResult: true);
+    });
+  }
+
   /// Movies/series that haven't been enriched yet (NULL enriched_at), for the
   /// enhanced-search crawl. Live is excluded — channels have no cast/director.
   /// [limit] bounds a single batch so the crawl can checkpoint between chunks.
