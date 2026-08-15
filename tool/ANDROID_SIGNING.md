@@ -23,29 +23,40 @@ encrypted backup is appropriate; a git repository is not.
 
 ## Creating the keystore
 
-Run this yourself — it prompts for passwords, which is why it is not scripted
-here. `keytool` ships with the JDK bundled in Android Studio:
+Commands here are PowerShell. Run this yourself in an **interactive** terminal:
+`keytool` prompts for the passwords and for your name and organisation, so it
+cannot be scripted or run through anything non-interactive. The JDK bundled
+with Android Studio provides it.
 
-```
-"C:\Program Files\Android\Android Studio\jbr\bin\keytool" -genkey -v ^
-  -keystore %USERPROFILE%\tali-release.jks ^
-  -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 ^
+```powershell
+& "C:\Program Files\Android\Android Studio\jbr\bin\keytool.exe" -genkey -v `
+  -keystore "$env:USERPROFILE\tali-release.jks" `
+  -storetype JKS -keyalg RSA -keysize 2048 -validity 10000 `
   -alias tali
 ```
+
+Two PowerShell details that bite here. The leading `&` is required: a quoted
+string on its own is just a string, and without the call operator PowerShell
+prints the path instead of running it. And the line continuation is a backtick,
+not `^` — copying the `cmd` form silently runs `keytool` with no arguments,
+which drops you into its usage text rather than an error.
 
 `-validity 10000` (about 27 years) is the usual choice: Play requires the key to
 outlast the app, and there is no way to rotate it afterwards.
 
 Then create `android/key.properties`, which the Gradle build reads:
 
-```
-storeFile=C:\\Users\\<you>\\tali-release.jks
+```properties
+storeFile=C:/Users/<you>/tali-release.jks
 storePassword=<the store password you chose>
 keyAlias=tali
 keyPassword=<the key password you chose>
 ```
 
-Backslashes must be doubled — it is a Java properties file.
+Forward slashes on purpose. This is a Java properties file, where a backslash
+is an escape character, so a Windows path either needs every separator doubled
+(`C:\\Users\\...`) or written with forward slashes — which Gradle's `file()`
+accepts on Windows, and which nobody gets wrong.
 
 ## Verifying a build is properly signed
 
@@ -54,14 +65,28 @@ and prints a warning, so a fresh clone still builds. That means a release APK
 can be debug-signed without anything obviously going wrong, and it is worth
 checking rather than assuming:
 
-```
+```powershell
 flutter build apk --release --split-per-abi
-"%LOCALAPPDATA%\Android\Sdk\build-tools\37.0.0\apksigner" verify --print-certs ^
+
+# apksigner is a .bat that shells out to java, and it will not find one on its
+# own - without JAVA_HOME it fails with "Unable to locate a Java Runtime".
+$env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+
+# Pick the newest build-tools rather than pinning a version that may not be
+# the one installed.
+$apksigner = Get-ChildItem "$env:LOCALAPPDATA\Android\Sdk\build-tools\*\apksigner.bat" |
+    Sort-Object FullName | Select-Object -Last 1
+
+& $apksigner.FullName verify --print-certs `
   build\app\outputs\flutter-apk\app-arm64-v8a-release.apk
 ```
 
 A debug-signed build shows `CN=Android Debug, O=Android, C=US`. Your own
 certificate's details mean the real key was used.
+
+Note that `flutter build` prints the "no android/key.properties" warning among a
+great deal of Gradle output and does not fail, so reading the certificate is the
+only reliable check. Do this before sending an APK to anyone.
 
 ## Which artifact to build
 
