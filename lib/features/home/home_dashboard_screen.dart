@@ -30,6 +30,7 @@ import '../../data/sources/media_source.dart';
 import '../../l10n/app_localizations.dart';
 import '../common/category_label.dart';
 import '../common/downloads_button.dart';
+import '../common/layout_breakpoints.dart';
 import '../common/pin_dialogs.dart';
 import '../common/poster_rail.dart';
 import '../downloads/downloads_screen.dart';
@@ -37,6 +38,7 @@ import '../movies/movie_detail_screen.dart';
 import '../player/channel_player_screen.dart';
 import '../series/series_detail_screen.dart';
 import 'home_hero_card.dart';
+import 'home_search_pill.dart';
 import 'home_strips_editor.dart';
 
 /// The default landing page: a glanceable dashboard built entirely from local
@@ -52,6 +54,10 @@ class HomeDashboardScreen extends StatefulWidget {
   final VoidCallback onOpenWatchlist;
   final VoidCallback onOpenFavorites;
 
+  /// Opens the Search destination. Reached from the pill below the header on a
+  /// phone, where Search is otherwise the last entry of the "More" sheet.
+  final VoidCallback onOpenSearch;
+
   /// Which content types have items — drives which quick cards to show, so a
   /// hidden (empty) type's card doesn't open an empty screen. Mirrors the
   /// shell's nav-destination hiding.
@@ -66,6 +72,7 @@ class HomeDashboardScreen extends StatefulWidget {
     required this.onOpenRecentlyAdded,
     required this.onOpenWatchlist,
     required this.onOpenFavorites,
+    required this.onOpenSearch,
     required this.availableTypes,
   });
 
@@ -526,6 +533,17 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                       account: widget.account,
                       onCustomize: _openCustomize,
                     ),
+                    // Below the greeting rather than above it: the header says
+                    // whose dashboard this is, and a search field above that
+                    // reads as chrome for the whole app instead of a thing on
+                    // this screen. Phone-only - the desktop rail already lists
+                    // Search permanently. Keyed off the window width, not this
+                    // widget's constraints, which exclude that rail.
+                    if (showsHomeSearchPill(MediaQuery.sizeOf(context).width))
+                      HomeSearchPill(
+                        hint: l.searchHint,
+                        onTap: widget.onOpenSearch,
+                      ),
                     if (hero != null)
                       HomeHeroCard(
                         eyebrow: l.continueWatching,

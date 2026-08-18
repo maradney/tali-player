@@ -10,3 +10,14 @@
 /// is ~410dp portrait, ~915dp landscape, but a rail there would eat a quarter
 /// of the video-browsing width) while a real desktop window is always wide.
 const kWideLayoutBreakpoint = 700.0;
+
+/// Whether [width] gets the desktop shape. Takes the window's width, not a
+/// widget's own constraints - inside the shell body the navigation rail has
+/// already been subtracted, which would flip the answer on a borderline window.
+bool isWideLayout(double width) => width >= kWideLayoutBreakpoint;
+
+/// Whether the Home dashboard shows its search pill.
+///
+/// Phone-only, and expressed here rather than as an inline comparison so
+/// "this changes nothing on desktop" is something a test can actually assert.
+bool showsHomeSearchPill(double width) => !isWideLayout(width);

@@ -100,6 +100,22 @@ const kMaxBottomBarDestinations = 5;
   );
 }
 
+/// Index of the Search destination in `_destinations`.
+const kSearchDestination = 9;
+
+/// The order the "More" sheet lists [overflow] in, with Search pinned first.
+///
+/// `_destinations` order has to put the content types first, because that same
+/// order decides what the bottom bar keeps — which left Search last of ten, and
+/// so last in this sheet too: the thing people open the sheet for, behind the
+/// most scanning. Pinning it here reorders the sheet without disturbing the bar.
+///
+/// Pure, like [splitDestinationsForBar], so it is testable without a tree.
+List<int> moreSheetOrder(List<int> overflow) => [
+      if (overflow.contains(kSearchDestination)) kSearchDestination,
+      ...overflow.where((i) => i != kSearchDestination),
+    ];
+
 /// The destination to actually select given what's visible: [selected] itself
 /// when it survived the filtering, otherwise the first visible destination
 /// (Home — index 0 is never hidden). Guards against a stale selection after
@@ -279,6 +295,7 @@ class _HomeShellState extends State<HomeShell> {
           onOpenRecentlyAdded: () => _onTabSelected(4),
           onOpenFavorites: () => _onTabSelected(6),
           onOpenWatchlist: () => _onTabSelected(7),
+          onOpenSearch: () => _onTabSelected(kSearchDestination),
         ),
         LiveTvScreen(key: ValueKey('live_${account.key}'), account: account),
         MoviesScreen(key: ValueKey('movies_${account.key}'), account: account),
@@ -363,7 +380,7 @@ class _HomeShellState extends State<HomeShell> {
         child: ListView(
           shrinkWrap: true,
           children: [
-            for (final i in overflow)
+            for (final i in moreSheetOrder(overflow))
               ListTile(
                 leading: Icon(_destinations[i].icon),
                 title: Text(_destinations[i].label(l)),
