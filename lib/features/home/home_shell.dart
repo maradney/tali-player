@@ -23,6 +23,7 @@ import '../accounts/accounts_screen.dart';
 import '../auth/login_screen.dart';
 import '../browse/browse_screen.dart';
 import '../common/disclaimer_dialog.dart';
+import '../common/layout_breakpoints.dart';
 import '../profiles/profile_picker_screen.dart';
 import '../common/sync_status_toast.dart';
 import '../favorites/favorites_screen.dart';
@@ -35,11 +36,6 @@ import '../series/series_screen.dart';
 import '../settings/settings_screen.dart';
 import '../watchlist/watchlist_screen.dart';
 import 'home_dashboard_screen.dart';
-
-/// Below this width we use a bottom NavigationBar (phone-style).
-/// At or above it, a side NavigationRail (desktop-style) makes better
-/// use of a wide Windows window instead of wasting horizontal space.
-const _wideLayoutBreakpoint = 700.0;
 
 /// The three content-type nav destinations that get hidden when their catalog
 /// is empty, mapped to the content type each browses. Their positions match
@@ -435,7 +431,7 @@ class _HomeShellState extends State<HomeShell> {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        final isWide = constraints.maxWidth >= _wideLayoutBreakpoint;
+        final isWide = isWideLayout(constraints.maxWidth);
 
         if (isWide) {
           return Scaffold(
@@ -532,7 +528,7 @@ class _HomeShellState extends State<HomeShell> {
 }
 
 /// The narrow-layout shell bar: which playlist is active, plus profile,
-/// settings and about. Only exists below [_wideLayoutBreakpoint] — the wide
+/// settings and about. Only exists below [kWideLayoutBreakpoint] — the wide
 /// layout puts all of this in the NavigationRail instead.
 ///
 /// It sits *above* each tab screen's own app bar, so nothing ever scrolls
