@@ -262,6 +262,10 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   double _volumeBeforeMute = 100;
   bool _isFullscreen = false;
 
+  /// Whether the window was maximized when fullscreen was entered, so leaving
+  /// fullscreen can put it back instead of leaving a small floating window.
+  bool _wasMaximizedBeforeFullscreen = false;
+
   // How the video fills its box (Fit / Fill-crop / Stretch). Session-local:
   // resets to "Fit" each time the player is opened, since the right mode
   // depends on the specific stream's framing.
@@ -867,6 +871,43 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     _player.play();
   }
 
+  /// After an episode is finished its progress is deleted, which for a series
+  /// used to throw away the only record of where the viewer had got to: the
+  /// detail screen lost its highlight and its season, and the show dropped out
+  /// of continue watching altogether. Point the series at the next episode
+  /// instead, so finishing one moves you forward rather than nowhere.
+  ///
+  /// Position zero and an unknown total on purpose — nothing has been watched
+  /// of it yet. progressFraction() reads a zero total as "no bar to draw", so
+  /// the entry marks the place without claiming progress that does not exist.
+  ///
+  /// Crosses season boundaries, unlike autoplay: this is a bookmark, not a
+  /// decision to keep playing. Finishing the last episode of the last season
+  /// leaves nothing behind, which is correct — the series is done.
+  void _advanceSeriesPointer(PlaybackRef ref) {
+    if (ref.type != 'episode') return;
+    final nav = _navigator;
+    if (nav == null) return;
+    final at = nav.locate(ref.id);
+    if (at == null) return;
+    final next = nav.next(at);
+    if (next == null) return;
+    final episode = nav.episodeAt(next);
+    final season = nav.seasonAt(next);
+    if (episode == null || season == null) return;
+
+    PlaybackService.instance.save(PlaybackProgress(
+      type: 'episode',
+      id: episode.id,
+      position: Duration.zero,
+      total: Duration.zero,
+      seriesId: ref.seriesId,
+      seasonNumber: season.seasonNumber,
+      episodeNum: episode.episodeNum,
+      updatedAt: DateTime.now(),
+    ));
+  }
+
   void _saveProgress(PlaybackRef ref) {
     final position = _player.state.position;
     final total = _player.state.duration;
@@ -884,6 +925,7 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       // Treat as finished rather than "in progress" so reopening this
       // item doesn't prompt to resume the last few seconds of credits.
       PlaybackService.instance.clear(ref.type, ref.id);
+      _advanceSeriesPointer(ref);
       return;
     }
 
@@ -1018,7 +1060,23 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   Future<void> _toggleFullscreen() async {
     final next = !_isFullscreen;
     if (isDesktopWindow) {
-      await windowManager.setFullScreen(next);
+      if (next) {
+        // Win32 will not take a maximized window fullscreen properly: the
+        // frame and title bar survive and the video ends up letterboxed
+        // inside a still-maximized window rather than filling the display.
+        // Drop out of maximized first, and remember to put it back.
+        _wasMaximizedBeforeFullscreen = await windowManager.isMaximized();
+        if (_wasMaximizedBeforeFullscreen) await windowManager.unmaximize();
+        await windowManager.setFullScreen(true);
+      } else {
+        await windowManager.setFullScreen(false);
+        // Restore the maximized state the user had before, rather than
+        // dumping them into a small floating window.
+        if (_wasMaximizedBeforeFullscreen) {
+          await windowManager.maximize();
+          _wasMaximizedBeforeFullscreen = false;
+        }
+      }
     } else {
       // The mobile equivalent: hide the status and navigation bars rather than
       // resize an OS window. "Sticky" so a stray swipe reveals them briefly
@@ -1047,6 +1105,13 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   void _restoreFromFullscreen() {
     if (isDesktopWindow) {
       windowManager.setFullScreen(false);
+      // Leaving the player straight from fullscreen must also undo the
+      // unmaximize that getting there required, or the window comes back
+      // smaller than the user left it.
+      if (_wasMaximizedBeforeFullscreen) {
+        _wasMaximizedBeforeFullscreen = false;
+        windowManager.maximize();
+      }
     } else {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       // Leaving the player mid-fullscreen must not strand the rest of the app
