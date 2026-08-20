@@ -115,9 +115,19 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
       final lastWatched =
           PlaybackService.instance.lastEpisodeForSeries(widget.series.seriesId);
       final id = lastWatched?.id;
-      if (id == _resumeEpisodeId) return;
+      // The season matters as much as the episode now that the player can
+      // cross season boundaries on its own: watching S1's finale and letting
+      // it roll into S2 used to leave this screen sitting on season 1, with
+      // the highlighted episode not even in the visible list.
+      final season = lastWatched == null
+          ? _initialSeasonIndex
+          : _info!.seasons
+              .indexWhere((s) => s.seasonNumber == lastWatched.seasonNumber);
+      final seasonIndex = season >= 0 ? season : _initialSeasonIndex;
+      if (id == _resumeEpisodeId && seasonIndex == _initialSeasonIndex) return;
       setState(() {
         _resumeEpisodeId = id;
+        _initialSeasonIndex = seasonIndex;
       });
     });
   }
@@ -194,6 +204,11 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
           // their series, so without this history tiles had no poster).
           favoriteItem: _favoriteItem,
           seriesName: widget.series.name,
+          // Everything the player needs to move between episodes itself,
+          // rather than being closed and reopened once per episode.
+          seriesInfo: _info,
+          seriesDisplayName: widget.series.name,
+          account: widget.account,
           playbackRef: PlaybackRef(
             type: 'episode',
             id: episode.id,
@@ -242,6 +257,11 @@ class _SeriesDetailScreenState extends State<SeriesDetailScreen> {
     }
 
     return DefaultTabController(
+      // Keyed on the season so a change actually takes: initialIndex is read
+      // once when the controller is created, so without this, returning from
+      // an episode that crossed into another season would update the
+      // highlight but leave the tab where it was.
+      key: ValueKey(_initialSeasonIndex),
       length: seasons.length,
       initialIndex: _initialSeasonIndex,
       child: Scaffold(

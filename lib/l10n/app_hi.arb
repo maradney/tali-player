@@ -16,6 +16,16 @@
   "playlistsTitle": "प्लेलिस्ट",
   "retry": "पुनः प्रयास करें",
   "cancel": "रद्द करें",
+  "autoplayNextEpisodeTitle": "अगला एपिसोड अपने आप चलाएँ",
+  "autoplayNextEpisodeSubtitle": "एक एपिसोड खत्म होने पर अगला चलाएँ। सीज़न के अंत में रुक जाता है।",
+  "nextEpisode": "अगला एपिसोड",
+  "previousEpisode": "पिछला एपिसोड",
+  "autoplayCountdown": "अगला एपिसोड {seconds} सेकंड में",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "अभी चलाएँ",
+  "shortcutEpisode": "अगला / पिछला एपिसोड",
   "remove": "हटाएँ",
   "close": "बंद करें",
   "connectingToServer": "सर्वर से कनेक्ट हो रहा है…",

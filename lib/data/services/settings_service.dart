@@ -7,6 +7,7 @@ const _fontPrefsKey = 'settings_font';
 const _gridDensityPrefsKey = 'settings_grid_density';
 const _languagePrefsKey = 'settings_language';
 const _enhancedSearchPrefsKey = 'settings_enhanced_search';
+const _autoplayNextEpisodePrefsKey = 'settings_autoplay_next_episode';
 const _externalPlayerEnabledPrefsKey = 'settings_external_player_enabled';
 const _externalPlayerPathPrefsKey = 'settings_external_player_path';
 
@@ -239,6 +240,11 @@ class SettingsService extends ChangeNotifier {
   bool _enhancedSearchEnabled = false;
   bool get enhancedSearchEnabled => _enhancedSearchEnabled;
 
+  /// Roll on to the next episode when one finishes. Season-bounded: a season
+  /// finale never pulls you into the next season - see EpisodeNavigator.
+  bool _autoplayNextEpisode = true;
+  bool get autoplayNextEpisode => _autoplayNextEpisode;
+
   /// When on (and [externalPlayerPath] is set), playback is handed off to an
   /// external player (VLC on Windows for now) instead of the built-in one.
   /// Off by default. Per-profile like the rest — the path is device-ish, but
@@ -296,6 +302,8 @@ class SettingsService extends ChangeNotifier {
       (l) => l.name == savedLanguage,
       orElse: () => AppLanguage.system,
     );
+    _autoplayNextEpisode =
+        prefs.getBool(_k(_autoplayNextEpisodePrefsKey)) ?? true;
     _enhancedSearchEnabled =
         prefs.getBool(_k(_enhancedSearchPrefsKey)) ?? false;
     _externalPlayerEnabled =
@@ -317,6 +325,7 @@ class SettingsService extends ChangeNotifier {
       _gridDensityPrefsKey,
       _languagePrefsKey,
       _enhancedSearchPrefsKey,
+      _autoplayNextEpisodePrefsKey,
       _externalPlayerEnabledPrefsKey,
       _externalPlayerPathPrefsKey,
     ]) {
@@ -334,6 +343,7 @@ class SettingsService extends ChangeNotifier {
     _gridDensity = GridDensity.comfortable;
     _language = AppLanguage.system;
     _enhancedSearchEnabled = false;
+    _autoplayNextEpisode = true;
     _externalPlayerEnabled = false;
     _externalPlayerPath = '';
   }
@@ -376,6 +386,14 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_k(_languagePrefsKey), language.name);
+  }
+
+  Future<void> setAutoplayNextEpisode(bool enabled) async {
+    if (enabled == _autoplayNextEpisode) return;
+    _autoplayNextEpisode = enabled;
+    notifyListeners();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_k(_autoplayNextEpisodePrefsKey), enabled);
   }
 
   Future<void> setEnhancedSearchEnabled(bool enabled) async {

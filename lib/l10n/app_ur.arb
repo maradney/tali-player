@@ -16,6 +16,16 @@
   "playlistsTitle": "پلے لسٹس",
   "retry": "دوبارہ کوشش کریں",
   "cancel": "منسوخ کریں",
+  "autoplayNextEpisodeTitle": "اگلی قسط خودکار چلائیں",
+  "autoplayNextEpisodeSubtitle": "ایک قسط ختم ہونے پر اگلی چلائیں۔ سیزن کے اختتام پر رک جاتا ہے۔",
+  "nextEpisode": "اگلی قسط",
+  "previousEpisode": "پچھلی قسط",
+  "autoplayCountdown": "اگلی قسط {seconds} سیکنڈ میں",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "ابھی چلائیں",
+  "shortcutEpisode": "اگلی / پچھلی قسط",
   "remove": "ہٹائیں",
   "close": "بند کریں",
   "connectingToServer": "سرور سے منسلک ہو رہا ہے…",

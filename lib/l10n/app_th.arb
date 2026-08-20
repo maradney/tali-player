@@ -16,6 +16,16 @@
   "playlistsTitle": "เพลย์ลิสต์",
   "retry": "ลองใหม่",
   "cancel": "ยกเลิก",
+  "autoplayNextEpisodeTitle": "เล่นตอนถัดไปอัตโนมัติ",
+  "autoplayNextEpisodeSubtitle": "เล่นตอนถัดไปเมื่อตอนปัจจุบันจบ หยุดเมื่อจบซีซัน",
+  "nextEpisode": "ตอนถัดไป",
+  "previousEpisode": "ตอนก่อนหน้า",
+  "autoplayCountdown": "ตอนถัดไปในอีก {seconds} วินาที",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "เล่นเลย",
+  "shortcutEpisode": "ตอนถัดไป / ก่อนหน้า",
   "remove": "ลบ",
   "close": "ปิด",
   "connectingToServer": "กำลังเชื่อมต่อกับเซิร์ฟเวอร์…",

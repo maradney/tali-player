@@ -16,6 +16,16 @@
   "playlistsTitle": "Listas de reprodução",
   "retry": "Tentar novamente",
   "cancel": "Cancelar",
+  "autoplayNextEpisodeTitle": "Reproduzir automaticamente o episódio seguinte",
+  "autoplayNextEpisodeSubtitle": "Reproduz o episódio seguinte quando um termina. Para no fim de uma temporada.",
+  "nextEpisode": "Episódio seguinte",
+  "previousEpisode": "Episódio anterior",
+  "autoplayCountdown": "Episódio seguinte em {seconds} s",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "Reproduzir agora",
+  "shortcutEpisode": "Episódio seguinte / anterior",
   "remove": "Remover",
   "close": "Fechar",
   "connectingToServer": "Conectando ao servidor…",

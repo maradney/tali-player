@@ -14,8 +14,14 @@ class _Shortcut {
 /// Shows the player keyboard-shortcuts reference. Opened by the help button in
 /// the player controls or by pressing `?`. Lists only shortcuts that actually
 /// exist in the player's key handler; [isVod] hides the speed row for live
-/// streams (where playback speed doesn't apply), matching the key handler.
-Future<void> showShortcutsHelp(BuildContext context, {required bool isVod}) {
+/// streams (where playback speed does not apply), matching the key handler,
+/// and [isSeries] adds the episode row only when there is a series to move
+/// through - listing a shortcut that does nothing is worse than omitting it.
+Future<void> showShortcutsHelp(
+  BuildContext context, {
+  required bool isVod,
+  bool isSeries = false,
+}) {
   final l = AppLocalizations.of(context)!;
   final shortcuts = <_Shortcut>[
     _Shortcut(const ['Space'], l.shortcutPlayPause),
@@ -23,6 +29,7 @@ Future<void> showShortcutsHelp(BuildContext context, {required bool isVod}) {
     _Shortcut(const ['↑', '↓'], l.shortcutVolume),
     if (isVod) _Shortcut(const ['[', ']'], l.shortcutSpeed),
     if (!isVod) _Shortcut(const ['Page Up', 'Page Down'], l.shortcutChannel),
+    if (isSeries) _Shortcut(const ['Shift+N', 'Shift+P'], l.shortcutEpisode),
     _Shortcut(const ['?'], l.shortcutHelp),
   ];
 

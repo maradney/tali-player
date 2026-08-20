@@ -16,6 +16,16 @@
   "playlistsTitle": "Oynatma listeleri",
   "retry": "Yeniden dene",
   "cancel": "İptal",
+  "autoplayNextEpisodeTitle": "Sonraki bölümü otomatik oynat",
+  "autoplayNextEpisodeSubtitle": "Bir bölüm bittiğinde sonrakini oynatır. Sezon sonunda durur.",
+  "nextEpisode": "Sonraki bölüm",
+  "previousEpisode": "Önceki bölüm",
+  "autoplayCountdown": "Sonraki bölüm {seconds} sn içinde",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "Şimdi oynat",
+  "shortcutEpisode": "Sonraki / önceki bölüm",
   "remove": "Kaldır",
   "close": "Kapat",
   "connectingToServer": "Sunucuya bağlanılıyor…",

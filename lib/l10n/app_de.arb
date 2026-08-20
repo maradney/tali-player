@@ -16,6 +16,16 @@
   "playlistsTitle": "Wiedergabelisten",
   "retry": "Erneut versuchen",
   "cancel": "Abbrechen",
+  "autoplayNextEpisodeTitle": "Nächste Folge automatisch abspielen",
+  "autoplayNextEpisodeSubtitle": "Spielt die nächste Folge ab, wenn eine endet. Stoppt am Ende einer Staffel.",
+  "nextEpisode": "Nächste Folge",
+  "previousEpisode": "Vorherige Folge",
+  "autoplayCountdown": "Nächste Folge in {seconds} s",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "Jetzt abspielen",
+  "shortcutEpisode": "Nächste / vorherige Folge",
   "remove": "Entfernen",
   "close": "Schließen",
   "connectingToServer": "Verbindung zum Server…",

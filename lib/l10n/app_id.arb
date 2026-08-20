@@ -16,6 +16,16 @@
   "playlistsTitle": "Daftar putar",
   "retry": "Coba lagi",
   "cancel": "Batal",
+  "autoplayNextEpisodeTitle": "Putar otomatis episode berikutnya",
+  "autoplayNextEpisodeSubtitle": "Memutar episode berikutnya saat satu episode selesai. Berhenti di akhir musim.",
+  "nextEpisode": "Episode berikutnya",
+  "previousEpisode": "Episode sebelumnya",
+  "autoplayCountdown": "Episode berikutnya dalam {seconds} d",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "Putar sekarang",
+  "shortcutEpisode": "Episode berikutnya / sebelumnya",
   "remove": "Hapus",
   "close": "Tutup",
   "connectingToServer": "Menghubungkan ke server…",

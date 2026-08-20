@@ -16,6 +16,16 @@
   "playlistsTitle": "Playlists",
   "retry": "Retry",
   "cancel": "Cancel",
+  "autoplayNextEpisodeTitle": "Autoplay next episode",
+  "autoplayNextEpisodeSubtitle": "Play the next episode when one finishes. Stops at the end of a season.",
+  "nextEpisode": "Next episode",
+  "previousEpisode": "Previous episode",
+  "autoplayCountdown": "Next episode in {seconds}s",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "Play now",
+  "shortcutEpisode": "Next / previous episode",
   "remove": "Remove",
   "close": "Close",
   "connectingToServer": "Connecting to server…",

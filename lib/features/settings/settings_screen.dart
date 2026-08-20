@@ -383,12 +383,13 @@ class SettingsScreen extends StatelessWidget {
                 onTap: () => _rebuildSearchIndex(context),
               ),
               _EnhancedSearchTile(account: account),
-              if (ExternalPlayer.isSupported || Platform.isWindows) ...[
-                const Divider(),
-                _SectionHeader(l.settingsPlayback),
-                if (ExternalPlayer.isSupported) const _ExternalPlayerTile(),
-                if (Platform.isWindows) const _TrayModeTile(),
-              ],
+              // Playback is no longer conditional: autoplay applies on every
+              // platform, unlike the external player and tray mode.
+              const Divider(),
+              _SectionHeader(l.settingsPlayback),
+              const _AutoplayNextEpisodeTile(),
+              if (ExternalPlayer.isSupported) const _ExternalPlayerTile(),
+              if (Platform.isWindows) const _TrayModeTile(),
               const Divider(),
               _SectionHeader(l.settingsBackup),
               ListTile(
@@ -780,6 +781,27 @@ class _SectionHeader extends StatelessWidget {
             .textTheme
             .labelLarge
             ?.copyWith(color: Theme.of(context).colorScheme.primary),
+      ),
+    );
+  }
+}
+
+/// "Autoplay next episode". Season-bounded by design, which the subtitle says
+/// outright — an autoplay that stops without explanation reads as a bug.
+class _AutoplayNextEpisodeTile extends StatelessWidget {
+  const _AutoplayNextEpisodeTile();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return AnimatedBuilder(
+      animation: SettingsService.instance,
+      builder: (context, _) => SwitchListTile(
+        secondary: const Icon(Icons.playlist_play),
+        title: Text(l.autoplayNextEpisodeTitle),
+        subtitle: Text(l.autoplayNextEpisodeSubtitle),
+        value: SettingsService.instance.autoplayNextEpisode,
+        onChanged: (v) => SettingsService.instance.setAutoplayNextEpisode(v),
       ),
     );
   }

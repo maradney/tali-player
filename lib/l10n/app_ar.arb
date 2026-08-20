@@ -16,6 +16,16 @@
   "playlistsTitle": "قوائم التشغيل",
   "retry": "إعادة المحاولة",
   "cancel": "إلغاء",
+  "autoplayNextEpisodeTitle": "التشغيل التلقائي للحلقة التالية",
+  "autoplayNextEpisodeSubtitle": "تشغيل الحلقة التالية عند انتهاء الحالية. يتوقف عند نهاية الموسم.",
+  "nextEpisode": "الحلقة التالية",
+  "previousEpisode": "الحلقة السابقة",
+  "autoplayCountdown": "الحلقة التالية خلال {seconds} ثانية",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "شغّل الآن",
+  "shortcutEpisode": "الحلقة التالية / السابقة",
   "remove": "إزالة",
   "close": "إغلاق",
   "connectingToServer": "جارٍ الاتصال بالخادم…",

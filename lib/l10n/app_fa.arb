@@ -16,6 +16,16 @@
   "playlistsTitle": "فهرست‌های پخش",
   "retry": "تلاش مجدد",
   "cancel": "لغو",
+  "autoplayNextEpisodeTitle": "پخش خودکار قسمت بعدی",
+  "autoplayNextEpisodeSubtitle": "با پایان هر قسمت، قسمت بعدی پخش می‌شود. در پایان هر فصل متوقف می‌شود.",
+  "nextEpisode": "قسمت بعدی",
+  "previousEpisode": "قسمت قبلی",
+  "autoplayCountdown": "قسمت بعدی تا {seconds} ثانیه",
+  "@autoplayCountdown": {
+    "placeholders": { "seconds": { "type": "int" } }
+  },
+  "autoplayPlayNow": "همین حالا پخش کن",
+  "shortcutEpisode": "قسمت بعدی / قبلی",
   "remove": "حذف",
   "close": "بستن",
   "connectingToServer": "در حال اتصال به سرور…",

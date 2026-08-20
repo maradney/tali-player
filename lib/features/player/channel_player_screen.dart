@@ -13,8 +13,11 @@ import '../../data/models/account.dart';
 import '../../data/models/channel.dart';
 import '../../data/models/epg_program.dart';
 import '../../data/models/favorite_item.dart';
+import '../../data/models/download_item.dart';
 import '../../data/models/playback_progress.dart';
+import '../../data/models/series_info.dart';
 import '../../data/models/watch_history_entry.dart';
+import '../../data/services/download_service.dart';
 import '../../data/services/external_player.dart';
 import '../../data/services/favorites_service.dart';
 import '../../data/services/pin_lock_service.dart';
@@ -25,6 +28,7 @@ import '../../data/sources/media_source.dart';
 import '../../l10n/app_localizations.dart';
 import '../../platform_capabilities.dart';
 import '../common/pin_dialogs.dart';
+import '../series/episode_navigator.dart';
 import 'shortcuts_help.dart';
 import 'audio_only_visualizer.dart';
 import 'fullscreen_orientation.dart';
@@ -131,6 +135,19 @@ class ChannelPlayerScreen extends StatefulWidget {
   /// carry no resume position.
   final bool seekable;
 
+  /// Every season of the series this episode belongs to, so the player can
+  /// move to the next/previous episode itself rather than being closed and
+  /// reopened per episode. Null for anything that is not an episode.
+  ///
+  /// Requires [account] as well: the URL for another episode has to be built
+  /// (or resolved to a downloaded file) at the moment it is played, since the
+  /// caller only ever resolved the one it opened with.
+  final SeriesInfo? seriesInfo;
+
+  /// The series' own name, used to rebuild the title when the episode
+  /// changes. [seriesName] serves the same purpose for watch history.
+  final String? seriesDisplayName;
+
   const ChannelPlayerScreen({
     super.key,
     required this.title,
@@ -144,6 +161,8 @@ class ChannelPlayerScreen extends StatefulWidget {
     this.account,
     this.httpHeaders,
     this.seekable = false,
+    this.seriesInfo,
+    this.seriesDisplayName,
   });
 
   @override
@@ -173,6 +192,33 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       widget.channels != null &&
       widget.channels!.length > 1 &&
       widget.account != null;
+
+  // ---- series episode navigation ----
+
+  /// Where in the series we are. Both are null unless the player was opened
+  /// with a [ChannelPlayerScreen.seriesInfo] that actually contains the
+  /// episode it was asked to play.
+  EpisodeNavigator? _navigator;
+  EpisodeCursor? _cursor;
+
+  /// Rebuilt on every episode change, so progress, history and the resume
+  /// guard all follow the episode actually on screen rather than the one the
+  /// screen was opened with.
+  PlaybackRef? _playbackRef;
+
+  /// Ticks down to the next episode after one finishes. Non-null only while
+  /// the countdown overlay is showing.
+  Timer? _autoplayTimer;
+  int _autoplaySecondsLeft = 0;
+
+  /// How long the viewer gets to stop the next episode. Long enough to read
+  /// and reach, short enough not to feel like a stall.
+  static const _autoplayCountdown = 8;
+
+  bool get _isSeries => _navigator != null && _cursor != null;
+  bool get _hasNextEpisode => _isSeries && _navigator!.hasNext(_cursor!);
+  bool get _hasPreviousEpisode =>
+      _isSeries && _navigator!.hasPrevious(_cursor!);
 
   // Audio/subtitle tracks the media exposes, and which are currently active.
   // Populated from the player's tracks/track streams once media loads.
@@ -231,7 +277,7 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   // epgFuture - e.g. from Favorites - was wrongly treated as seekable VOD.)
   // [seekable] extends this to catch-up/timeshift replays, which behave like
   // VOD (fixed past footage) but never track a resume position.
-  bool get _isVod => widget.playbackRef != null || widget.seekable;
+  bool get _isVod => _playbackRef != null || widget.seekable;
 
   /// A playing stream with audio but no real video track — radio. Drives the
   /// animated visualizer overlay so the screen isn't just black. Only ever
@@ -279,6 +325,22 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     _channelIndex = widget.channelIndex;
     _epgFuture = widget.epgFuture;
     _favoriteItem = widget.favoriteItem;
+    _playbackRef = widget.playbackRef;
+
+    // Episode navigation needs three things at once: the season list, an
+    // account to build URLs from, and the current episode actually being
+    // present in that list. Missing any of them simply means no next/previous
+    // controls, rather than a half-working pair of buttons.
+    final info = widget.seriesInfo;
+    final ref = _playbackRef;
+    if (info != null && widget.account != null && ref?.type == 'episode') {
+      final nav = EpisodeNavigator(info.seasons);
+      final at = nav.locate(ref!.id);
+      if (at != null) {
+        _navigator = nav;
+        _cursor = at;
+      }
+    }
 
     // Hand off to the external player instead of building the internal one.
     // Still record watch history (that's URL-independent); everything below
@@ -315,6 +377,13 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     });
 
     // Spinner overlay while the stream is opening/rebuffering.
+    // End of the episode. media_kit also emits this for live streams that
+    // drop, so _onPlaybackCompleted checks it is actually a series first.
+    _player.stream.completed.listen((completed) {
+      if (!mounted || !completed) return;
+      _onPlaybackCompleted();
+    });
+
     _player.stream.buffering.listen((buffering) {
       if (mounted) setState(() => _buffering = buffering);
     });
@@ -408,7 +477,7 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     _openStream();
     _scheduleRecordHistory();
 
-    final ref = widget.playbackRef;
+    final ref = _playbackRef;
     if (ref != null) {
       final saved = PlaybackService.instance.progressFor(ref.type, ref.id);
       // Built before the timer starts: its first tick can land while the
@@ -541,6 +610,130 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   /// Tunes to another channel in [widget.channels] (wrapping past the ends)
   /// and swaps the stream in place - the essence of live-TV zapping. A locked
   /// target channel still prompts for the PIN, like opening it from the list.
+  /// Switches to [cursor]'s episode in place, the way [_zapBy] switches
+  /// channel — pushing a route per episode would stack the whole season on
+  /// the navigator and tear down the player each time.
+  Future<void> _playEpisodeAt(EpisodeCursor cursor) async {
+    final nav = _navigator;
+    final account = widget.account;
+    if (nav == null || account == null) return;
+    final episode = nav.episodeAt(cursor);
+    final season = nav.seasonAt(cursor);
+    if (episode == null || season == null) return;
+
+    _cancelAutoplay();
+    // The episode being left keeps its position: the viewer may come back to
+    // it, and Previous is one button away.
+    final leaving = _playbackRef;
+    if (leaving != null) _saveProgress(leaving);
+
+    // Resolved per episode, not once: a downloaded episode must play from
+    // disk even when the one before it streamed, and vice versa.
+    final stored = _downloadedEpisode(episode.id);
+    final localPath = stored == null
+        ? null
+        : DownloadService.instance.localPathFor(stored);
+    final url = localPath ?? MediaSource.forAccount(account).episodeUrl(episode);
+
+    final ref = PlaybackRef(
+      type: 'episode',
+      id: episode.id,
+      seriesId: _playbackRef?.seriesId,
+      seasonNumber: season.seasonNumber,
+      episodeNum: episode.episodeNum,
+      categoryId: _playbackRef?.categoryId,
+    );
+
+    if (!mounted) return;
+    setState(() {
+      _cursor = cursor;
+      _playbackRef = ref;
+      _title = '${widget.seriesDisplayName ?? widget.title} - ${episode.title}';
+      _streamUrl = url;
+      _headers =
+          localPath != null ? null : iptvVodHeaders(isM3u: account.isM3u);
+      _error = null;
+      _buffering = true;
+      _started = false;
+      _classified = false;
+      _audioTracks = const [];
+      _subtitleTracks = const [];
+      _videoTracks = const [];
+    });
+
+    // Rebuild the resume machinery around the new episode: a saved position
+    // for *this* episode should be honoured, and the old episode's guard must
+    // not veto it.
+    _progressTimer?.cancel();
+    final saved = PlaybackService.instance.progressFor(ref.type, ref.id);
+    _resumeGuard = ResumeGuard(savedPosition: saved?.position);
+    _progressTimer =
+        Timer.periodic(const Duration(seconds: 5), (_) => _saveProgress(ref));
+
+    _openStream();
+    _recordHistory();
+  }
+
+  /// The stored download record for an episode, or null if it isn't
+  /// downloaded. Looked up rather than reconstructed: the on-disk filename is
+  /// derived from fields only the real record has, so a fabricated stand-in
+  /// would resolve to a path that does not exist.
+  DownloadItem? _downloadedEpisode(String episodeId) {
+    for (final item in DownloadService.instance.items) {
+      if (item.type == 'episode' &&
+          item.id == episodeId &&
+          item.status == DownloadStatus.completed) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _goToEpisode(int delta) async {
+    if (!_isSeries) return;
+    final target = delta > 0
+        ? _navigator!.next(_cursor!)
+        : _navigator!.previous(_cursor!);
+    if (target == null) return; // first of the series, or last — nothing to do
+    await _playEpisodeAt(target);
+  }
+
+  /// Called when the stream reaches its end.
+  void _onPlaybackCompleted() {
+    if (!_isSeries) return;
+    if (!SettingsService.instance.autoplayNextEpisode) return;
+    // Season-bounded on purpose: finishing a season should let you stop.
+    if (!_navigator!.shouldAutoplayAfter(_cursor!)) return;
+    _startAutoplayCountdown();
+  }
+
+  void _startAutoplayCountdown() {
+    _autoplayTimer?.cancel();
+    setState(() => _autoplaySecondsLeft = _autoplayCountdown);
+    _autoplayTimer = Timer.periodic(const Duration(seconds: 1), (t) {
+      if (!mounted) return t.cancel();
+      if (_autoplaySecondsLeft <= 1) {
+        t.cancel();
+        _autoplayTimer = null;
+        final next = _navigator!.nextInSeason(_cursor!);
+        setState(() => _autoplaySecondsLeft = 0);
+        if (next != null) _playEpisodeAt(next);
+        return;
+      }
+      setState(() => _autoplaySecondsLeft--);
+    });
+  }
+
+  void _cancelAutoplay() {
+    _autoplayTimer?.cancel();
+    _autoplayTimer = null;
+    if (_autoplaySecondsLeft != 0 && mounted) {
+      setState(() => _autoplaySecondsLeft = 0);
+    } else {
+      _autoplaySecondsLeft = 0;
+    }
+  }
+
   Future<void> _zapBy(int delta) async {
     if (!_canZap) return;
     final channels = widget.channels!;
@@ -611,7 +804,7 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   }
 
   void _recordHistory() {
-    final ref = widget.playbackRef;
+    final ref = _playbackRef;
     if (ref != null) {
       WatchHistoryService.instance.record(WatchHistoryEntry(
         type: ref.type,
@@ -925,7 +1118,7 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     // `?` (shift+/) opens the shortcuts reference — works in fullscreen too,
     // where the app-bar help button isn't shown.
     if (event.character == '?') {
-      showShortcutsHelp(context, isVod: _isVod);
+      showShortcutsHelp(context, isVod: _isVod, isSeries: _isSeries);
       _showControls();
       return KeyEventResult.handled;
     }
@@ -952,6 +1145,12 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
         _zapBy(1); // channel up
       case LogicalKeyboardKey.pageDown:
         _zapBy(-1); // channel down
+      case LogicalKeyboardKey.keyN:
+        // Shift, so plain N stays free and these cannot be hit by accident
+        // mid-episode. PageUp/PageDown are already channel zap.
+        if (HardwareKeyboard.instance.isShiftPressed) _goToEpisode(1);
+      case LogicalKeyboardKey.keyP:
+        if (HardwareKeyboard.instance.isShiftPressed) _goToEpisode(-1);
       default:
         return KeyEventResult.ignored;
     }
@@ -971,6 +1170,7 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   @override
   void dispose() {
     _progressTimer?.cancel();
+    _autoplayTimer?.cancel();
     _hideControlsTimer?.cancel();
     _startTimeoutTimer?.cancel();
     // Drop rather than flush: seeking a player that is being torn down is
@@ -980,7 +1180,7 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     // In external-playback mode the media_kit player was never created, and
     // there's no in-app position to save.
     if (!_external) {
-      final ref = widget.playbackRef;
+      final ref = _playbackRef;
       if (ref != null) _saveProgress(ref);
       // Leaving the player always releases the screen, even mid-playback -
       // otherwise backing out during a stream would keep the display on for
@@ -1099,7 +1299,8 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
                       icon: const Icon(Icons.keyboard_outlined),
                       tooltip:
                           AppLocalizations.of(context)!.keyboardShortcutsTitle,
-                      onPressed: () => showShortcutsHelp(context, isVod: _isVod),
+                      onPressed: () =>
+                          showShortcutsHelp(context, isVod: _isVod, isSeries: _isSeries),
                     ),
                   if (_favoriteItem != null)
                     AnimatedBuilder(
@@ -1159,6 +1360,23 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
                               : null,
                         ),
                       ),
+                      // After the tap layer so it sits above it, and outside
+                      // the auto-hiding control bar: a countdown you cannot
+                      // see is a countdown you cannot cancel.
+                      if (_autoplaySecondsLeft > 0 && !_isPip)
+                        Positioned(
+                          right: 24,
+                          bottom: 96,
+                          child: _AutoplayCountdown(
+                            secondsLeft: _autoplaySecondsLeft,
+                            onCancel: _cancelAutoplay,
+                            onPlayNow: () {
+                              final next = _navigator!.nextInSeason(_cursor!);
+                              _cancelAutoplay();
+                              if (next != null) _playEpisodeAt(next);
+                            },
+                          ),
+                        ),
                       Positioned(
                         left: 0,
                         right: 0,
@@ -1205,6 +1423,11 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
                                           showChannelControls:
                                               _canZap && !_isVod,
                                           onPrevChannel: () => _zapBy(-1),
+                                          showEpisodeControls: _isSeries,
+                                          canPrevEpisode: _hasPreviousEpisode,
+                                          canNextEpisode: _hasNextEpisode,
+                                          onPrevEpisode: () => _goToEpisode(-1),
+                                          onNextEpisode: () => _goToEpisode(1),
                                           onNextChannel: () => _zapBy(1),
                                           audioTracks: _audioTracks,
                                           subtitleTracks: _subtitleTracks,
@@ -1338,6 +1561,18 @@ class _ControlsOverlay extends StatelessWidget {
   final bool showChannelControls;
   final VoidCallback onPrevChannel;
   final VoidCallback onNextChannel;
+
+  /// Episode skip controls, shown for series playback. Mutually exclusive
+  /// with the channel controls, which are live-only.
+  final bool showEpisodeControls;
+
+  /// Whether there is anywhere to go. Both false at the two ends of a series
+  /// — the buttons stay visible but disabled, so the boundary is legible
+  /// rather than the control silently vanishing.
+  final bool canPrevEpisode;
+  final bool canNextEpisode;
+  final VoidCallback onPrevEpisode;
+  final VoidCallback onNextEpisode;
   final List<AudioTrack> audioTracks;
   final List<SubtitleTrack> subtitleTracks;
   final List<VideoTrack> videoTracks;
@@ -1377,6 +1612,11 @@ class _ControlsOverlay extends StatelessWidget {
     required this.showSpeedControl,
     required this.showChannelControls,
     required this.onPrevChannel,
+    required this.showEpisodeControls,
+    required this.canPrevEpisode,
+    required this.canNextEpisode,
+    required this.onPrevEpisode,
+    required this.onNextEpisode,
     required this.onNextChannel,
     required this.audioTracks,
     required this.subtitleTracks,
@@ -1538,6 +1778,12 @@ class _ControlsOverlay extends StatelessWidget {
                   tooltip: l.prevChannel,
                   onPressed: onPrevChannel,
                 ),
+              if (showEpisodeControls)
+                IconButton(
+                  icon: const Icon(Icons.skip_previous, color: iconColor),
+                  tooltip: l.previousEpisode,
+                  onPressed: canPrevEpisode ? onPrevEpisode : null,
+                ),
               IconButton(
                 iconSize: 40,
                 icon: Icon(isPlaying ? Icons.pause_circle : Icons.play_circle,
@@ -1549,6 +1795,12 @@ class _ControlsOverlay extends StatelessWidget {
                   icon: const Icon(Icons.skip_next, color: iconColor),
                   tooltip: l.nextChannel,
                   onPressed: onNextChannel,
+                ),
+              if (showEpisodeControls)
+                IconButton(
+                  icon: const Icon(Icons.skip_next, color: iconColor),
+                  tooltip: l.nextEpisode,
+                  onPressed: canNextEpisode ? onNextEpisode : null,
                 ),
               if (showSeekControls) ...[
                 IconButton(
@@ -1862,6 +2114,58 @@ class _EpgStrip extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// The "next episode in Ns" card shown when an episode ends and another is
+/// queued behind it.
+///
+/// Deliberately a card with two explicit buttons rather than a bare timer:
+/// autoplay that cannot be stopped is the complaint people actually have
+/// about autoplay, and the cancel has to be reachable without hunting.
+class _AutoplayCountdown extends StatelessWidget {
+  final int secondsLeft;
+  final VoidCallback onCancel;
+  final VoidCallback onPlayNow;
+
+  const _AutoplayCountdown({
+    required this.secondsLeft,
+    required this.onCancel,
+    required this.onPlayNow,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
+    return Material(
+      color: Colors.black.withValues(alpha: 0.82),
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l.autoplayCountdown(secondsLeft),
+              style: const TextStyle(color: Colors.white, fontSize: 15),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextButton(onPressed: onCancel, child: Text(l.cancel)),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: onPlayNow,
+                  child: Text(l.autoplayPlayNow),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
