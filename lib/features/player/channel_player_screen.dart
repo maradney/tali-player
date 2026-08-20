@@ -1216,6 +1216,15 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
         if (HardwareKeyboard.instance.isShiftPressed) _goToEpisode(1);
       case LogicalKeyboardKey.keyP:
         if (HardwareKeyboard.instance.isShiftPressed) _goToEpisode(-1);
+      case LogicalKeyboardKey.keyF:
+        _toggleFullscreen();
+      case LogicalKeyboardKey.escape:
+        // Only swallowed when there is a fullscreen to leave. Otherwise it
+        // bubbles to PopScope and closes the player, which is what Escape has
+        // always done here — taking it over unconditionally would strand
+        // people who use it to back out.
+        if (!_isFullscreen) return KeyEventResult.ignored;
+        _toggleFullscreen();
       default:
         return KeyEventResult.ignored;
     }

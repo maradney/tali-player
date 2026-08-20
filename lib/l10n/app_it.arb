@@ -328,6 +328,7 @@
   "shortcutVolume": "Volume su / giù",
   "shortcutSpeed": "Velocità giù / su",
   "shortcutChannel": "Canale su / giù",
+  "shortcutFullscreen": "Schermo intero attivo / disattivo",
   "shortcutHelp": "Mostra questa guida",
   "diagnosticsTitle": "Diagnostica",
   "diagnosticsSubtitle": "Test di connessione, registro sessione, cache",

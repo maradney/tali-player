@@ -328,6 +328,7 @@
   "shortcutVolume": "Subir / bajar volumen",
   "shortcutSpeed": "Velocidad menor / mayor",
   "shortcutChannel": "Canal siguiente / anterior",
+  "shortcutFullscreen": "Pantalla completa activada / desactivada",
   "shortcutHelp": "Mostrar esta ayuda",
   "diagnosticsTitle": "Diagnóstico",
   "diagnosticsSubtitle": "Prueba de conexión, registro de sesión, caché",

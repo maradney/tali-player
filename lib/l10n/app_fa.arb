@@ -328,6 +328,7 @@
   "shortcutVolume": "زیاد / کم کردن صدا",
   "shortcutSpeed": "کاهش / افزایش سرعت پخش",
   "shortcutChannel": "کانال بعدی / قبلی",
+  "shortcutFullscreen": "تمام‌صفحه روشن / خاموش",
   "shortcutHelp": "نمایش این راهنما",
   "diagnosticsTitle": "عیب‌یابی",
   "diagnosticsSubtitle": "آزمایش اتصال، گزارش نشست، حافظه پنهان",

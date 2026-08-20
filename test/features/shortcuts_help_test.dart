@@ -3,7 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:iptv_player/features/player/shortcuts_help.dart';
 import 'package:iptv_player/l10n/app_localizations.dart';
 
-Future<void> _open(WidgetTester tester, {required bool isVod}) async {
+Future<void> _open(
+  WidgetTester tester, {
+  required bool isVod,
+  bool isSeries = false,
+}) async {
   await tester.pumpWidget(
     MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -12,7 +16,7 @@ Future<void> _open(WidgetTester tester, {required bool isVod}) async {
         builder: (context) => Scaffold(
           body: Center(
             child: ElevatedButton(
-              onPressed: () => showShortcutsHelp(context, isVod: isVod),
+              onPressed: () => showShortcutsHelp(context, isVod: isVod, isSeries: isSeries),
               child: const Text('open'),
             ),
           ),
@@ -45,5 +49,28 @@ void main() {
     await _open(tester, isVod: true);
     expect(find.text('Space'), findsOneWidget);
     expect(find.text('?'), findsOneWidget); // the help shortcut itself
+    // Fullscreen applies to live and on-demand alike, so it is unconditional.
+    expect(find.text('F'), findsOneWidget);
+    expect(find.text('Esc'), findsOneWidget);
+  });
+
+  testWidgets('live lists fullscreen too', (tester) async {
+    await _open(tester, isVod: false);
+    expect(find.text('F'), findsOneWidget);
+    expect(find.text('Esc'), findsOneWidget);
+  });
+
+  testWidgets('a movie does not list episode keys', (tester) async {
+    // Listing keys that do nothing sends people pressing them and concluding
+    // the player is broken.
+    await _open(tester, isVod: true);
+    expect(find.text('Shift+N'), findsNothing);
+    expect(find.text('Shift+P'), findsNothing);
+  });
+
+  testWidgets('a series lists episode keys', (tester) async {
+    await _open(tester, isVod: true, isSeries: true);
+    expect(find.text('Shift+N'), findsOneWidget);
+    expect(find.text('Shift+P'), findsOneWidget);
   });
 }

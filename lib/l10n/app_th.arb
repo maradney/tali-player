@@ -328,6 +328,7 @@
   "shortcutVolume": "เพิ่ม / ลดเสียง",
   "shortcutSpeed": "ลด / เพิ่มความเร็ว",
   "shortcutChannel": "ช่องถัดไป / ก่อนหน้า",
+  "shortcutFullscreen": "เปิด / ปิดเต็มหน้าจอ",
   "shortcutHelp": "แสดงความช่วยเหลือนี้",
   "diagnosticsTitle": "การวินิจฉัย",
   "diagnosticsSubtitle": "ทดสอบการเชื่อมต่อ บันทึกเซสชัน แคช",

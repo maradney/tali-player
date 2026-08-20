@@ -30,6 +30,7 @@ Future<void> showShortcutsHelp(
     if (isVod) _Shortcut(const ['[', ']'], l.shortcutSpeed),
     if (!isVod) _Shortcut(const ['Page Up', 'Page Down'], l.shortcutChannel),
     if (isSeries) _Shortcut(const ['Shift+N', 'Shift+P'], l.shortcutEpisode),
+    _Shortcut(const ['F', 'Esc'], l.shortcutFullscreen),
     _Shortcut(const ['?'], l.shortcutHelp),
   ];
 

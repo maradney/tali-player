@@ -328,6 +328,7 @@
   "shortcutVolume": "Sesi aç / kıs",
   "shortcutSpeed": "Hızı azalt / artır",
   "shortcutChannel": "Kanal yukarı / aşağı",
+  "shortcutFullscreen": "Tam ekran açık / kapalı",
   "shortcutHelp": "Bu yardımı göster",
   "diagnosticsTitle": "Tanılama",
   "diagnosticsSubtitle": "Bağlantı testi, oturum günlüğü, önbellek",

@@ -328,6 +328,7 @@
   "shortcutVolume": "Aumentar / diminuir volume",
   "shortcutSpeed": "Velocidade menor / maior",
   "shortcutChannel": "Canal seguinte / anterior",
+  "shortcutFullscreen": "Ecrã inteiro ligado / desligado",
   "shortcutHelp": "Mostrar esta ajuda",
   "diagnosticsTitle": "Diagnóstico",
   "diagnosticsSubtitle": "Teste de conexão, registo da sessão, cache",

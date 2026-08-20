@@ -328,6 +328,7 @@
   "shortcutVolume": "आवाज़ बढ़ाएँ / घटाएँ",
   "shortcutSpeed": "गति कम / ज़्यादा",
   "shortcutChannel": "चैनल ऊपर / नीचे",
+  "shortcutFullscreen": "फ़ुलस्क्रीन चालू / बंद",
   "shortcutHelp": "यह मदद दिखाएँ",
   "diagnosticsTitle": "डायग्नोस्टिक्स",
   "diagnosticsSubtitle": "कनेक्टिविटी परीक्षण, सत्र लॉग, कैश",

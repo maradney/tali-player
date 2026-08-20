@@ -666,6 +666,7 @@
   "shortcutVolume": "Volume up / down",
   "shortcutSpeed": "Playback speed down / up",
   "shortcutChannel": "Channel up / down",
+  "shortcutFullscreen": "Fullscreen on / off",
   "shortcutHelp": "Show this help",
   "diagnosticsTitle": "Diagnostics",
   "diagnosticsSubtitle": "Connectivity test, session log, cache",

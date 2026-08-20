@@ -328,6 +328,7 @@
   "shortcutVolume": "Lauter / leiser",
   "shortcutSpeed": "Geschwindigkeit runter / hoch",
   "shortcutChannel": "Kanal hoch / runter",
+  "shortcutFullscreen": "Vollbild ein / aus",
   "shortcutHelp": "Diese Hilfe anzeigen",
   "diagnosticsTitle": "Diagnose",
   "diagnosticsSubtitle": "Verbindungstest, Sitzungsprotokoll, Cache",

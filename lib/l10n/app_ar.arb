@@ -328,6 +328,7 @@
   "shortcutVolume": "رفع / خفض الصوت",
   "shortcutSpeed": "إبطاء / تسريع التشغيل",
   "shortcutChannel": "القناة التالية / السابقة",
+  "shortcutFullscreen": "تشغيل / إيقاف ملء الشاشة",
   "shortcutHelp": "عرض هذه المساعدة",
   "diagnosticsTitle": "التشخيص",
   "diagnosticsSubtitle": "اختبار الاتصال، سجل الجلسة، ذاكرة التخزين المؤقت",

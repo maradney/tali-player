@@ -328,6 +328,7 @@
   "shortcutVolume": "Volume naik / turun",
   "shortcutSpeed": "Kecepatan turun / naik",
   "shortcutChannel": "Saluran naik / turun",
+  "shortcutFullscreen": "Layar penuh aktif / nonaktif",
   "shortcutHelp": "Tampilkan bantuan ini",
   "diagnosticsTitle": "Diagnostik",
   "diagnosticsSubtitle": "Uji koneksi, log sesi, cache",
