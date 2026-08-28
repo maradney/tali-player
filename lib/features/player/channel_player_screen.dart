@@ -28,6 +28,7 @@ import '../../data/sources/media_source.dart';
 import '../../l10n/app_localizations.dart';
 import '../../platform_capabilities.dart';
 import '../common/pin_dialogs.dart';
+import 'autoplay_countdown.dart';
 import '../series/episode_navigator.dart';
 import 'shortcuts_help.dart';
 import 'audio_only_visualizer.dart';
@@ -1434,23 +1435,6 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
                               : null,
                         ),
                       ),
-                      // After the tap layer so it sits above it, and outside
-                      // the auto-hiding control bar: a countdown you cannot
-                      // see is a countdown you cannot cancel.
-                      if (_autoplaySecondsLeft > 0 && !_isPip)
-                        Positioned(
-                          right: 24,
-                          bottom: 96,
-                          child: _AutoplayCountdown(
-                            secondsLeft: _autoplaySecondsLeft,
-                            onCancel: _cancelAutoplay,
-                            onPlayNow: () {
-                              final next = _navigator!.nextInSeason(_cursor!);
-                              _cancelAutoplay();
-                              if (next != null) _playEpisodeAt(next);
-                            },
-                          ),
-                        ),
                       Positioned(
                         left: 0,
                         right: 0,
@@ -1555,6 +1539,38 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
                           child: _PlaybackErrorOverlay(
                             message: _error!,
                             onRetry: _retry,
+                          ),
+                        ),
+                      // Last in the stack, so nothing paints over it and its
+                      // buttons actually receive the tap. It sat above the
+                      // control bar before, which drew the seek slider across
+                      // it and swallowed every click on Cancel.
+                      //
+                      // Bottom-centred and clear of the controls: the bar grows
+                      // upward when it gains an EPG strip or a second row, so a
+                      // fixed offset that merely looked clear on one stream
+                      // would collide on another.
+                      if (_autoplaySecondsLeft > 0 && !_isPip)
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Padding(
+                            padding: EdgeInsets.only(
+                                bottom: _controlsVisible ? 172 : 48),
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: AutoplayCountdown(
+                                secondsLeft: _autoplaySecondsLeft,
+                                onCancel: _cancelAutoplay,
+                                onPlayNow: () {
+                                  final next =
+                                      _navigator!.nextInSeason(_cursor!);
+                                  _cancelAutoplay();
+                                  if (next != null) _playEpisodeAt(next);
+                                },
+                              ),
+                            ),
                           ),
                         ),
                     ],
@@ -2192,54 +2208,3 @@ class _EpgStrip extends StatelessWidget {
   }
 }
 
-/// The "next episode in Ns" card shown when an episode ends and another is
-/// queued behind it.
-///
-/// Deliberately a card with two explicit buttons rather than a bare timer:
-/// autoplay that cannot be stopped is the complaint people actually have
-/// about autoplay, and the cancel has to be reachable without hunting.
-class _AutoplayCountdown extends StatelessWidget {
-  final int secondsLeft;
-  final VoidCallback onCancel;
-  final VoidCallback onPlayNow;
-
-  const _AutoplayCountdown({
-    required this.secondsLeft,
-    required this.onCancel,
-    required this.onPlayNow,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context)!;
-    return Material(
-      color: Colors.black.withValues(alpha: 0.82),
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              l.autoplayCountdown(secondsLeft),
-              style: const TextStyle(color: Colors.white, fontSize: 15),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextButton(onPressed: onCancel, child: Text(l.cancel)),
-                const SizedBox(width: 8),
-                FilledButton(
-                  onPressed: onPlayNow,
-                  child: Text(l.autoplayPlayNow),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
