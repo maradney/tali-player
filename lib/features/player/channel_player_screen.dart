@@ -17,6 +17,7 @@ import '../../data/models/download_item.dart';
 import '../../data/models/playback_progress.dart';
 import '../../data/models/series_info.dart';
 import '../../data/models/watch_history_entry.dart';
+import '../../data/services/diagnostics_log.dart';
 import '../../data/services/download_service.dart';
 import '../../data/services/external_player.dart';
 import '../../data/services/favorites_service.dart';
@@ -339,12 +340,16 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     final info = widget.seriesInfo;
     final ref = _playbackRef;
     if (info != null && widget.account != null && ref?.type == 'episode') {
-      final nav = EpisodeNavigator(info.seasons);
-      final at = nav.locate(ref!.id);
-      if (at != null) {
-        _navigator = nav;
-        _cursor = at;
-      }
+      _bindNavigator(info, ref!);
+    } else if (widget.account != null &&
+        ref?.type == 'episode' &&
+        ref?.seriesId != null) {
+      // Opened from somewhere that had the episode but not its siblings — the
+      // downloads list and the Home downloads rail both play straight from a
+      // DownloadItem. Fetch the season list so those get skip controls and
+      // autoplay too, instead of the feature quietly existing only on the
+      // route that happens to have the data already.
+      unawaited(_loadSeriesForNavigation(ref!));
     }
 
     // Hand off to the external player instead of building the internal one.
@@ -615,6 +620,36 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   /// Tunes to another channel in [widget.channels] (wrapping past the ends)
   /// and swaps the stream in place - the essence of live-TV zapping. A locked
   /// target channel still prompts for the PIN, like opening it from the list.
+  /// Points the navigator at [info], if it actually contains [ref]'s episode.
+  void _bindNavigator(SeriesInfo info, PlaybackRef ref) {
+    final nav = EpisodeNavigator(info.seasons);
+    final at = nav.locate(ref.id);
+    if (at == null) return; // not this series' episode — leave it unnavigable
+    setState(() {
+      _navigator = nav;
+      _cursor = at;
+    });
+  }
+
+  /// Fetches the series behind a lone episode so it can be navigated.
+  ///
+  /// Best-effort and deliberately silent: a downloaded episode is often played
+  /// with no connection at all, and failing to reach the panel should cost the
+  /// skip buttons, not the playback that is already running from disk.
+  Future<void> _loadSeriesForNavigation(PlaybackRef ref) async {
+    try {
+      final info = await MediaSource.forAccount(widget.account!)
+          .getSeriesInfo(ref.seriesId!);
+      if (!mounted) return;
+      _bindNavigator(info, ref);
+    } catch (_) {
+      DiagnosticsLog.instance.add(
+        'Autoplay: could not load the season list for this episode; '
+        'skip controls unavailable',
+      );
+    }
+  }
+
   /// Switches to [cursor]'s episode in place, the way [_zapBy] switches
   /// channel — pushing a route per episode would stack the whole season on
   /// the navigator and tear down the player each time.
@@ -705,10 +740,29 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
 
   /// Called when the stream reaches its end.
   void _onPlaybackCompleted() {
-    if (!_isSeries) return;
-    if (!SettingsService.instance.autoplayNextEpisode) return;
-    // Season-bounded on purpose: finishing a season should let you stop.
-    if (!_navigator!.shouldAutoplayAfter(_cursor!)) return;
+    // Logged rather than silently dropped. Every branch here ends with
+    // "nothing visibly happens", which is the hardest kind of behaviour to
+    // report or diagnose - the first time this did not fire, there was no way
+    // to tell which condition had refused it.
+    if (!_isSeries) {
+      DiagnosticsLog.instance.add(
+        'Autoplay: not offered — this player has no series list '
+        '(opened from somewhere other than the series page)',
+      );
+      return;
+    }
+    if (!SettingsService.instance.autoplayNextEpisode) {
+      DiagnosticsLog.instance.add('Autoplay: not offered — turned off');
+      return;
+    }
+    if (!_navigator!.shouldAutoplayAfter(_cursor!)) {
+      final season = _navigator!.seasonAt(_cursor!);
+      DiagnosticsLog.instance.add(
+        'Autoplay: not offered — end of season ${season?.seasonNumber}',
+      );
+      return;
+    }
+    DiagnosticsLog.instance.add('Autoplay: offering the next episode');
     _startAutoplayCountdown();
   }
 

@@ -61,6 +61,7 @@ class DownloadsScreen extends StatelessWidget {
           // favorite star), same as playing from the detail screens.
           favoriteItem: item.toFavoriteItem(),
           playbackRef: item.playbackRef,
+          account: account,
         ),
       ),
     );

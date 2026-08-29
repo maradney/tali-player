@@ -477,6 +477,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           // favorite star), same as playing from the detail screens.
           favoriteItem: item.toFavoriteItem(),
           playbackRef: item.playbackRef,
+          account: widget.account,
         ),
       ),
     );
