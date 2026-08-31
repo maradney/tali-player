@@ -2131,6 +2131,11 @@ class _ControlsOverlay extends StatelessWidget {
               ),
             ],
           ),
+          // Matches the 8 the seek row leaves above these controls, so the
+          // bar has the same breathing room top and bottom. It used to come
+          // from the volume row that sat down here; removing that row took
+          // the gap with it and left the buttons against the edge.
+          const SizedBox(height: 8),
         ],
       ),
     );
