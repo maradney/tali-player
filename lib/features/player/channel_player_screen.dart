@@ -28,6 +28,7 @@ import '../../data/services/watch_history_service.dart';
 import '../../data/sources/media_source.dart';
 import '../../l10n/app_localizations.dart';
 import '../../platform_capabilities.dart';
+import '../common/layout_breakpoints.dart';
 import '../common/pin_dialogs.dart';
 import 'autoplay_countdown.dart';
 import '../series/episode_navigator.dart';
@@ -1969,6 +1970,47 @@ class _ControlsOverlay extends StatelessWidget {
                   onPressed: onSeekForward30,
                 ),
               ],
+              // Volume, inline with everything else rather than stranded on a
+              // row of its own below the bar.
+              IconButton(
+                icon: Icon(
+                  muted || volume == 0
+                      ? Icons.volume_off
+                      : volume < 50
+                          ? Icons.volume_down
+                          : Icons.volume_up,
+                  color: iconColor,
+                ),
+                tooltip: muted ? l.unmute : l.mute,
+                onPressed: onToggleMute,
+              ),
+              // The slider is desktop-only. On a ~410dp phone it and its icon
+              // would take a fifth of the bar, which is how the controls
+              // overflowed before, and the level there belongs to the hardware
+              // keys anyway - so a phone gets the mute toggle above and
+              // nothing more.
+              if (isWideLayout(MediaQuery.sizeOf(context).width))
+                SizedBox(
+                  width: 68,
+                  child: SliderTheme(
+                    data: SliderTheme.of(context).copyWith(
+                      activeTrackColor: iconColor,
+                      thumbColor: iconColor,
+                      inactiveTrackColor: iconColor.withValues(alpha: 0.3),
+                      trackHeight: 2,
+                      thumbShape:
+                          const RoundSliderThumbShape(enabledThumbRadius: 6),
+                      overlayShape:
+                          const RoundSliderOverlayShape(overlayRadius: 12),
+                    ),
+                    child: Slider(
+                      value: volume,
+                      min: 0,
+                      max: 100,
+                      onChanged: onVolumeChanged,
+                    ),
+                  ),
+                ),
               if (showSpeedControl)
                 PopupMenuButton<double>(
                   tooltip: l.playbackSpeed,
@@ -2088,48 +2130,6 @@ class _ControlsOverlay extends StatelessWidget {
                 onPressed: onToggleFullscreen,
               ),
             ],
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    muted || volume == 0
-                        ? Icons.volume_off
-                        : volume < 50
-                            ? Icons.volume_down
-                            : Icons.volume_up,
-                    color: iconColor,
-                  ),
-                  tooltip: muted ? l.unmute : l.mute,
-                  onPressed: onToggleMute,
-                ),
-                // Fixed, narrow width rather than spanning the whole bar -
-                // volume is a secondary control and doesn't need the room
-                // the seek bar above it does.
-                SizedBox(
-                  width: 100,
-                  child: SliderTheme(
-                    data: SliderTheme.of(context).copyWith(
-                      activeTrackColor: iconColor,
-                      thumbColor: iconColor,
-                      inactiveTrackColor: iconColor.withValues(alpha: 0.3),
-                      trackHeight: 2,
-                      thumbShape:
-                          const RoundSliderThumbShape(enabledThumbRadius: 6),
-                    ),
-                    child: Slider(
-                      value: volume,
-                      min: 0,
-                      max: 100,
-                      onChanged: onVolumeChanged,
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
