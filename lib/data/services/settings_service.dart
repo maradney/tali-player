@@ -8,6 +8,7 @@ const _gridDensityPrefsKey = 'settings_grid_density';
 const _languagePrefsKey = 'settings_language';
 const _enhancedSearchPrefsKey = 'settings_enhanced_search';
 const _autoplayNextEpisodePrefsKey = 'settings_autoplay_next_episode';
+const _playerVolumePrefsKey = 'settings_player_volume';
 const _externalPlayerEnabledPrefsKey = 'settings_external_player_enabled';
 const _externalPlayerPathPrefsKey = 'settings_external_player_path';
 
@@ -245,6 +246,12 @@ class SettingsService extends ChangeNotifier {
   bool _autoplayNextEpisode = true;
   bool get autoplayNextEpisode => _autoplayNextEpisode;
 
+  /// Player volume, 0-100. Persisted because it is a property of the room you
+  /// are sitting in, not of the video: having it snap back to full on every
+  /// new episode is exactly the wrong default at night.
+  double _playerVolume = 100;
+  double get playerVolume => _playerVolume;
+
   /// When on (and [externalPlayerPath] is set), playback is handed off to an
   /// external player (VLC on Windows for now) instead of the built-in one.
   /// Off by default. Per-profile like the rest — the path is device-ish, but
@@ -302,6 +309,8 @@ class SettingsService extends ChangeNotifier {
       (l) => l.name == savedLanguage,
       orElse: () => AppLanguage.system,
     );
+    _playerVolume =
+        (prefs.getDouble(_k(_playerVolumePrefsKey)) ?? 100).clamp(0, 100);
     _autoplayNextEpisode =
         prefs.getBool(_k(_autoplayNextEpisodePrefsKey)) ?? true;
     _enhancedSearchEnabled =
@@ -326,6 +335,7 @@ class SettingsService extends ChangeNotifier {
       _languagePrefsKey,
       _enhancedSearchPrefsKey,
       _autoplayNextEpisodePrefsKey,
+      _playerVolumePrefsKey,
       _externalPlayerEnabledPrefsKey,
       _externalPlayerPathPrefsKey,
     ]) {
@@ -344,6 +354,7 @@ class SettingsService extends ChangeNotifier {
     _language = AppLanguage.system;
     _enhancedSearchEnabled = false;
     _autoplayNextEpisode = true;
+    _playerVolume = 100;
     _externalPlayerEnabled = false;
     _externalPlayerPath = '';
   }
@@ -386,6 +397,17 @@ class SettingsService extends ChangeNotifier {
     notifyListeners();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_k(_languagePrefsKey), language.name);
+  }
+
+  /// Not notifyListeners()-ing: the player already holds the live value and
+  /// rebuilding every listener on each drag of a volume slider would be a lot
+  /// of churn for a number nothing else on screen displays.
+  Future<void> setPlayerVolume(double volume) async {
+    final clamped = volume.clamp(0.0, 100.0);
+    if (clamped == _playerVolume) return;
+    _playerVolume = clamped;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setDouble(_k(_playerVolumePrefsKey), clamped);
   }
 
   Future<void> setAutoplayNextEpisode(bool enabled) async {

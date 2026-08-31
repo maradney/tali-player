@@ -259,9 +259,10 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
   static const _maxLiveRetries = 5;
   int _liveRetries = 0;
 
-  double _volume = 100;
+  // Seeded from settings so a level chosen once carries into the next video.
+  double _volume = SettingsService.instance.playerVolume;
   bool _muted = false;
-  double _volumeBeforeMute = 100;
+  double _volumeBeforeMute = SettingsService.instance.playerVolume;
   bool _isFullscreen = false;
 
   /// Whether the window was maximized when fullscreen was entered, so leaving
@@ -365,6 +366,12 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
 
     _player = Player();
     _controller = VideoController(_player);
+    // media_kit starts every player at 100 regardless of what the slider says,
+    // so the remembered level has to be pushed in explicitly - otherwise the
+    // control would show one number while the audio played at another. Set on
+    // the player rather than per stream: it survives each open() for the life
+    // of this screen, including switching episodes.
+    _player.setVolume(_volume);
 
     _player.stream.playing.listen((playing) {
       if (!mounted) return;
@@ -1070,6 +1077,10 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       _muted = value == 0;
     });
     _player.setVolume(value);
+    // Remembered across videos, and across restarts. Muting is deliberately
+    // not saved: silencing one thing is a decision about that thing, whereas
+    // opening the app permanently muted with no clue why is a bug report.
+    unawaited(SettingsService.instance.setPlayerVolume(value));
   }
 
   void _toggleMute() {
