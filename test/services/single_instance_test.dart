@@ -39,6 +39,26 @@ void main() {
     expect(lockFile().existsSync(), isTrue);
   });
 
+  test('the locked file is still held afterwards', () async {
+    // Not the formality it looks. The open file has to stay *reachable* for
+    // the life of the process: dart:io closes a RandomAccessFile from a
+    // finalizer once nothing refers to it, and closing it releases the lock.
+    //
+    // The first version stored it in a field that nothing ever read, which
+    // AOT correctly treated as dead and optimised away - so release builds
+    // took the lock, dropped it moments later, and every launch believed it
+    // was the first. JIT kept the store, so tests and  passed while
+    // the shipped app did not.
+    //
+    // This assertion is also the read that keeps the reference alive. If it
+    // ever looks redundant, that is exactly the bug coming back.
+    await SingleInstance.instance.claim(dir);
+    expect(SingleInstance.instance.holdsLock, isTrue);
+
+    await SingleInstance.instance.release();
+    expect(SingleInstance.instance.holdsLock, isFalse);
+  });
+
   test('a missing directory is created rather than failing the launch',
       () async {
     final nested = Directory('${dir.path}${Platform.pathSeparator}a'

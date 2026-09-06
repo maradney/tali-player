@@ -44,7 +44,19 @@ class SingleInstance {
   /// behaves the same everywhere.
   static const pollInterval = Duration(seconds: 1);
 
-  RandomAccessFile? _lock;
+  /// The open, locked file, held for the life of the process.
+  ///
+  /// Static and read back through [holdsLock], which matters more than it
+  /// looks: dart:io closes a RandomAccessFile from a finalizer once it becomes
+  /// unreachable, and closing it drops the lock. A field that is only ever
+  /// written is dead code to the AOT compiler, so the reference has to be one
+  /// the compiler can see being used.
+  static final List<RandomAccessFile> _held = [];
+
+  /// Whether this process is holding the instance lock. Also the read that
+  /// keeps [_held] alive — do not remove it as "unused".
+  bool get holdsLock => _held.isNotEmpty;
+
   Timer? _poll;
   Directory? _dir;
 
@@ -71,7 +83,7 @@ class SingleInstance {
         await _writeShowRequest(dir);
         return InstanceRole.secondary;
       }
-      _lock = raf;
+      _held.add(raf);
       // A request left by an instance that died before reading it would
       // otherwise make this one raise its window for no reason.
       clearShowRequest(dir);
@@ -140,10 +152,13 @@ class SingleInstance {
   Future<void> release() async {
     _poll?.cancel();
     _poll = null;
-    try {
-      await _lock?.unlock();
-      await _lock?.close();
-    } catch (_) {}
-    _lock = null;
+    for (final raf in _held) {
+      try {
+        await raf.unlock();
+        await raf.close();
+      } catch (_) {}
+    }
+    _held.clear();
   }
 }
+
