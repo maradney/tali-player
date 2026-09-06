@@ -33,6 +33,7 @@ import '../common/pin_dialogs.dart';
 import 'autoplay_countdown.dart';
 import '../series/episode_navigator.dart';
 import 'shortcuts_help.dart';
+import 'android_orientation.dart';
 import 'audio_only_visualizer.dart';
 import 'fullscreen_orientation.dart';
 import 'resume_guard.dart';
@@ -1155,12 +1156,29 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       // Turn the phone sideways with it: held upright, a 16:9 video occupies
       // barely a third of the screen, so "fullscreen" in portrait isn't much
       // of one. Leaving fullscreen hands orientation back to the device.
-      await SystemChrome.setPreferredOrientations(
-        next
-            ? fullscreenOrientationsFor(
-                width: _player.state.width, height: _player.state.height)
-            : DeviceOrientation.values,
-      );
+      //
+      // Android goes through its own channel instead, and this is an either/or
+      // rather than both: setPreferredOrientations sets the same underlying
+      // Android property, so calling both would leave the result to whichever
+      // ran last. The channel is used because permitting the two landscape
+      // orientations is not enough when the user has rotation lock on - the
+      // system picks one and stays there, and flipping the phone leaves the
+      // picture upside down.
+      if (AndroidOrientation.isSupported) {
+        if (next) {
+          await AndroidOrientation.enterFullscreen(
+              width: _player.state.width, height: _player.state.height);
+        } else {
+          await AndroidOrientation.exitFullscreen();
+        }
+      } else {
+        await SystemChrome.setPreferredOrientations(
+          next
+              ? fullscreenOrientationsFor(
+                  width: _player.state.width, height: _player.state.height)
+              : DeviceOrientation.values,
+        );
+      }
     }
     if (mounted) setState(() => _isFullscreen = next);
   }
@@ -1182,8 +1200,14 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     } else {
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
       // Leaving the player mid-fullscreen must not strand the rest of the app
-      // locked to landscape.
-      SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+      // locked to landscape. Released through whichever mechanism claimed it,
+      // for the same reason it was claimed that way - the Android channel and
+      // setPreferredOrientations write the same property.
+      if (AndroidOrientation.isSupported) {
+        unawaited(AndroidOrientation.exitFullscreen());
+      } else {
+        SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+      }
     }
   }
 
