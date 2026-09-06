@@ -1,8 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:media_kit/media_kit.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'app_info.dart';
@@ -20,6 +23,7 @@ import 'data/services/playback_service.dart';
 import 'data/services/profiles_migration.dart';
 import 'data/services/profiles_service.dart';
 import 'data/services/settings_service.dart';
+import 'data/services/single_instance.dart';
 import 'data/services/tray_service.dart';
 import 'data/services/watch_history_service.dart';
 import 'data/services/watchlist_service.dart';
@@ -42,6 +46,26 @@ void main() async {
   // Window/tray management is desktop-only (window_manager and tray_manager
   // have no mobile implementations — unguarded calls throw on Android/iOS).
   if (isDesktopWindow) {
+    // One copy per user. With tray mode on, closing only hides the window, so
+    // launching again used to start a second copy behind the first - three
+    // launches, three tray icons, no way to tell them apart.
+    //
+    // Release only: during development `flutter run` alongside an installed
+    // copy would otherwise exit before printing anything, which looks like a
+    // broken build rather than a working feature.
+    //
+    // Anything other than a definite "someone else holds the lock" carries on
+    // and starts. Not being able to tell is a much smaller problem than an app
+    // that will not open.
+    if (kReleaseMode) {
+      final role = await SingleInstance.instance
+          .claim(await getApplicationSupportDirectory());
+      if (role == InstanceRole.secondary) {
+        // The running copy has been asked to show itself; nothing more to do.
+        exit(0);
+      }
+    }
+
     // Needed before any windowManager calls (the player screen's fullscreen
     // toggle).
     await windowManager.ensureInitialized();
@@ -54,6 +78,12 @@ void main() async {
     // System-tray mode ("keep running in the tray on close") — no-op unless
     // the user enabled it in Settings. Internally Windows-only.
     await TrayService.instance.init();
+
+    // Another launch asking us to come forward. Started after the window is
+    // configured so there is something to show by the time a request arrives.
+    if (kReleaseMode) {
+      SingleInstance.instance.listenForShowRequests(_bringWindowToFront);
+    }
   }
 
   // Fold any pre-profiles install into the profiles model first (re-keys
@@ -82,6 +112,28 @@ void main() async {
   }
 
   runApp(const IptvPlayerApp());
+}
+
+/// Brings the existing window back after a second launch.
+///
+/// Deliberately all four steps in order. The window may be hidden in the tray,
+/// minimised, behind other windows, or any combination, and each needs a
+/// different call — showing a minimised window leaves it minimised, and
+/// focusing a hidden one focuses nothing.
+///
+/// Windows restricts which processes may take the foreground, so `focus()` can
+/// end up flashing the taskbar button instead of raising the window. That is
+/// the OS's decision, not a bug here, and it is the behaviour to watch for
+/// when testing this.
+Future<void> _bringWindowToFront() async {
+  try {
+    if (await windowManager.isMinimized()) await windowManager.restore();
+    if (!await windowManager.isVisible()) await windowManager.show();
+    await windowManager.focus();
+  } catch (_) {
+    // Never let a failure to raise the window take down the running app - it
+    // is still perfectly usable from the tray icon.
+  }
 }
 
 /// The first screen after the disclaimer. Shows the profile picker when the
