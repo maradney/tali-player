@@ -24,6 +24,7 @@ import '../../data/services/favorites_service.dart';
 import '../../data/services/pin_lock_service.dart';
 import '../../data/services/playback_service.dart';
 import '../../data/services/settings_service.dart';
+import '../../data/services/tray_service.dart';
 import '../../data/services/watch_history_service.dart';
 import '../../data/sources/media_source.dart';
 import '../../l10n/app_localizations.dart';
@@ -364,6 +365,12 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
       _scheduleRecordHistory();
       _launchExternal();
       return;
+    }
+
+    // Closing to the tray hides the window; a film should not carry on playing
+    // behind it. Desktop-only, where tray mode exists at all.
+    if (isDesktopWindow) {
+      TrayService.instance.hiddenToTray.addListener(_onHiddenToTrayChanged);
     }
 
     _player = Player();
@@ -1125,6 +1132,24 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
     setState(() => _currentVideoId = track.id);
   }
 
+  /// Pauses when the window disappears into the tray.
+  ///
+  /// Radio is the exception and keeps playing. A station with no picture is
+  /// exactly the thing someone wants running while the window is out of the
+  /// way, and the player already knows the difference — [_audioOnly] is what
+  /// drives the visualizer that replaces the black video surface.
+  ///
+  /// Nothing resumes on the way back. The window returns showing a paused
+  /// frame at the position it stopped, which is a state the viewer can read;
+  /// starting playback again on its own would be a surprise for anyone who
+  /// opened the window to do something else.
+  void _onHiddenToTrayChanged() {
+    if (!mounted || _external) return;
+    if (!TrayService.instance.hiddenToTray.value) return;
+    if (_audioOnly) return;
+    if (_isPlaying) _player.pause();
+  }
+
   Future<void> _toggleFullscreen() async {
     final next = !_isFullscreen;
     if (isDesktopWindow) {
@@ -1334,6 +1359,9 @@ class _ChannelPlayerScreenState extends State<ChannelPlayerScreen> {
 
   @override
   void dispose() {
+    if (isDesktopWindow) {
+      TrayService.instance.hiddenToTray.removeListener(_onHiddenToTrayChanged);
+    }
     _progressTimer?.cancel();
     _autoplayTimer?.cancel();
     _hideControlsTimer?.cancel();

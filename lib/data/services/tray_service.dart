@@ -91,7 +91,14 @@ class TrayService extends ChangeNotifier with TrayListener, WindowListener {
     }
   }
 
+  /// True while the window is hidden in the tray rather than closed.
+  ///
+  /// A ValueNotifier rather than a callback so more than one screen can react
+  /// without the tray having to know who they are.
+  final ValueNotifier<bool> hiddenToTray = ValueNotifier(false);
+
   Future<void> _showWindow() async {
+    hiddenToTray.value = false;
     await windowManager.show();
     await windowManager.focus();
   }
@@ -135,9 +142,13 @@ class TrayService extends ChangeNotifier with TrayListener, WindowListener {
   @override
   void onWindowClose() async {
     // Only reachable with preventClose on (i.e. tray mode enabled): hide
-    // instead of exiting. Playback (and downloads/sync) keep running.
+    // instead of exiting. Downloads and the catalog sync keep running, which
+    // is the point of the mode. Video does not: the player watches
+    // [hiddenToTray] and pauses, because a hidden window still playing a film
+    // is just a soundtrack with no way to see what it belongs to.
     if (_closeToTray) {
       await windowManager.hide();
+      hiddenToTray.value = true;
     } else {
       await windowManager.destroy();
     }
