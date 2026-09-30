@@ -67,12 +67,12 @@ A few things are necessarily platform-specific:
 
 ## Status
 
-Version **0.1.0**. Windows is the mature target and has been through a full
-release pass. The Android port is newer — it builds, runs, and is being
-verified on real hardware; expect rougher edges there. See
-[CHANGELOG.md](CHANGELOG.md) for what has landed and [POLICY.md](POLICY.md)
-for the project's content policy, including the features that will never be
-built.
+Version **0.2.0**. Windows is the mature target and has been through two full
+release passes. Android shipped in 0.2.0 with per-ABI APKs and is verified on
+real hardware, but it is the younger of the two — expect rougher edges there.
+See [CHANGELOG.md](CHANGELOG.md) for what has landed and
+[POLICY.md](POLICY.md) for the project's content policy, including the
+features that will never be built.
 
 ## Install
 
@@ -83,8 +83,8 @@ built.
 2. Extract it anywhere and run `tali.exe`.
 
 > **"Windows protected your PC"?** The app is open-source but not
-> code-signed (certificates cost money this donation-funded project doesn't
-> spend). Click **More info → Run anyway**, or build it from source yourself.
+> code-signed, so Windows can't identify the publisher. Click
+> **More info → Run anyway**, or build it from source yourself.
 
 If the app fails to start with a missing-DLL error, install the
 [Microsoft Visual C++ Redistributable (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe).
@@ -97,9 +97,9 @@ sources when prompted:
 
 | APK | For |
 |---|---|
-| `app-arm64-v8a-release.apk` | Virtually every phone sold in the last decade |
-| `app-armeabi-v7a-release.apk` | Older 32-bit devices |
-| `app-x86_64-release.apk` | Emulators |
+| `tali-<version>-android-arm64-v8a.apk` | Virtually every phone sold in the last decade |
+| `tali-<version>-android-armeabi-v7a.apk` | Older 32-bit devices |
+| `tali-<version>-android-x86_64.apk` | Emulators |
 
 The per-ABI split exists because a universal APK carries every architecture's
 copy of libmpv and is roughly twice the size any one phone needs.
@@ -149,13 +149,34 @@ lib/            app source
   data/         API clients, database, models, services
   features/     one directory per screen or feature area
   l10n/         ARB translation sources (13 locales)
-test/           633 tests — unit, widget, and golden-ish pixel checks
+test/           709 tests — unit, widget, and golden-ish pixel checks
 android/ windows/   platform projects
 design/         logo and app-icon sources (SVG masters + exports)
 tool/           release packaging and signing docs
 ```
 
 Run the suite with `flutter test` and the linter with `flutter analyze`.
+
+## How to help
+
+None of this needs funding for now. What it does need:
+
+- **Bug reports with detail.** Settings → Diagnostics has a session log and a
+  Copy button; the log is far more useful than a description alone. It records
+  status codes and error types, never request URLs, so your credentials are
+  not in it — though the screen does name your playlist, which you may want to
+  trim.
+- **Translation fixes.** The app ships 13 languages and not all of them were
+  written by native speakers. If something reads awkwardly in yours, the
+  strings live in `lib/l10n/app_<code>.arb` and a one-line correction is a
+  real contribution.
+- **Testing on hardware I don't have.** Especially tablets, older Android
+  versions, and unusual panel setups. "It works" is useful; "it works except
+  this" is more so.
+- **Telling me which panels misbehave.** Providers differ wildly in what they
+  return, and most of the awkward bugs here came from one panel doing
+  something unexpected. Please don't send credentials — the symptom and what
+  Diagnostics says is enough.
 
 ## License
 

@@ -1,0 +1,70 @@
+name: Bug report
+description: Something in Tali does not work the way it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. The single most useful thing you can
+        attach is the Diagnostics log — see the last field.
+
+        **Please do not paste your panel URL, username or password anywhere
+        in this issue.** They are not needed to diagnose anything.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Tali version
+      description: Settings → About, or the filename you downloaded.
+      placeholder: "0.2.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows
+        - Android
+    validations:
+      required: true
+
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version and device
+      placeholder: "Windows 11 23H2 / Pixel 7, Android 14"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: source
+    attributes:
+      label: Source type
+      options:
+        - Xtream Codes panel
+        - M3U / M3U8 playlist
+        - Not related to a source
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics log
+      description: |
+        Settings → Diagnostics → Copy. The log records status codes and error
+        types and never request URLs, so your credentials are not in it. It
+        does name your playlist, which you may want to trim before pasting.
+      render: text
+    validations:
+      required: false

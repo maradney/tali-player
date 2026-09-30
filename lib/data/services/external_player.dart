@@ -6,8 +6,8 @@ import 'dart:io';
 ///
 /// This is the escape hatch for codecs/containers the built-in media_kit
 /// player can't handle; the user opts in and points it at their player in
-/// Settings. Expanding to other platforms/players (see the roadmap) means
-/// adding candidates + a per-platform notion of "supported".
+/// Settings. Expanding to other platforms/players means adding candidates
+/// + a per-platform notion of "supported".
 class ExternalPlayer {
   ExternalPlayer._();
 

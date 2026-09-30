@@ -1,0 +1,30 @@
+name: Translation fix
+description: Something reads awkwardly or is wrong in your language
+labels: [translation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Tali ships 13 languages and not all were written by native speakers.
+        Corrections are genuinely welcome — a single line is a real
+        contribution.
+
+  - type: input
+    id: locale
+    attributes:
+      label: Language
+      description: The locale code if you know it, otherwise the language name.
+      placeholder: "ar / Arabic"
+    validations:
+      required: true
+
+  - type: textarea
+    id: correction
+    attributes:
+      label: What is wrong, and what it should say
+      description: |
+        Where you see it in the app, the current wording, and your suggested
+        replacement. Source strings live in `lib/l10n/app_<code>.arb` if you
+        would rather open a pull request.
+    validations:
+      required: true
